@@ -94,7 +94,7 @@ export function AddItemModal({
                             className="appearance-none w-full bg-transparent text-white font-medium border border-gray-700 rounded-lg px-3 py-2 pr-8 focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 cursor-pointer transition-all hover:border-gray-600"
                         >
                             {CATEGORY_OPTIONS.map((cat) => (
-                                <option key={cat} value={cat}>
+                                <option key={cat} value={cat} className="text-black bg-white">
                                     {cat}
                                 </option>
                             ))}

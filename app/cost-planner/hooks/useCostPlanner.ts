@@ -126,13 +126,52 @@ export function useCostPlanner() {
 
   const updateGlobalParameters = useCallback(
     (updates: Partial<GlobalParameters>) => {
-      setState((prev) => ({
-        ...prev,
-        globalParameters: {
-          ...prev.globalParameters,
-          ...updates,
-        },
-      }));
+      setState((prev) => {
+        let newState = {
+          ...prev,
+          globalParameters: {
+            ...prev.globalParameters,
+            ...updates,
+          },
+        };
+
+        // Se a unidade de área mudou, converter as quantidades de insumos
+        if (
+          updates.areaUnit &&
+          updates.areaUnit !== prev.globalParameters.areaUnit
+        ) {
+          const oldUnit = prev.globalParameters.areaUnit;
+          const newUnit = updates.areaUnit;
+
+          // Função para truncar a 10^-6 (6 casas decimais)
+          const truncate = (value: number): number => {
+            return Math.trunc(value * 1e6) / 1e6;
+          };
+
+          // Determinar fator de conversão
+          let conversionFactor: number;
+          if (oldUnit === "hectares" && newUnit === "m²") {
+            // De hectares para m²: dividir por 10000
+            conversionFactor = 1 / 10000;
+          } else if (oldUnit === "m²" && newUnit === "hectares") {
+            // De m² para hectares: multiplicar por 10000
+            conversionFactor = 10000;
+          } else {
+            conversionFactor = 1;
+          }
+
+          // Converter apenas as quantidades de INSUMOS
+          newState.items = prev.items.map((item) => ({
+            ...item,
+            quantityPerHectare:
+              item.costCategory === "Insumos"
+                ? truncate(item.quantityPerHectare * conversionFactor)
+                : item.quantityPerHectare,
+          }));
+        }
+
+        return newState;
+      });
     },
     []
   );
