@@ -27,20 +27,17 @@ export function useCostPlanner() {
   const [state, setState] = useState<CostPlannerState>(DEFAULT_STATE);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Load from localStorage after mount (avoids hydration mismatch)
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
         setState(JSON.parse(saved));
       } catch {
-        // corrupted data, keep defaults
       }
     }
     setIsLoaded(true);
   }, []);
 
-  // Auto-save to localStorage whenever state changes (only after initial load)
   useEffect(() => {
     if (isLoaded) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -171,19 +168,14 @@ export function useCostPlanner() {
   const totals = calculateTotals();
 
   return {
-    // Estado
     state,
-    // Cálculos
     totals,
     calculateItemCost,
-    // Operações de item
     addItem,
     updateItem,
     deleteItem,
     getItemsBySection,
-    // Parâmetros globais
     updateGlobalParameters,
-    // Persistência
     saveProject,
     clearForm,
   };
