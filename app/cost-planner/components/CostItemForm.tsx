@@ -22,7 +22,7 @@ export function CostItemForm({
   const itemCost = item.pricePerUnit * item.quantityPerHectare * area;
 
   return (
-    <div className="p-3 bg-white/5 border border-white/10 rounded-lg space-y-3">
+    <div className="p-3 bg-gray-900 border border-gray-800 rounded-lg space-y-3">
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1">
           <h4 className="font-medium text-white">{item.name}</h4>

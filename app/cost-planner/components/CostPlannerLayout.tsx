@@ -97,16 +97,7 @@ export function CostPlannerLayout() {
   };
 
   return (
-    <div
-      className="min-h-screen bg-cover bg-center relative"
-      style={{
-        backgroundImage:
-          "url('https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=1200&h=800&fit=crop')",
-      }}
-    >
-      {/* Overlay Glassmorphism */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
-
+    <div className="min-h-screen bg-black relative">
       {/* Conteúdo */}
       <div className="relative z-10 min-h-screen p-6">
         {/* Header */}
@@ -119,7 +110,7 @@ export function CostPlannerLayout() {
           </div>
           <Link
             href="/"
-            className="px-4 py-2 bg-white/10 border border-white/20 text-white hover:bg-white/20 rounded-lg transition"
+            className="px-4 py-2 bg-gray-900 border border-gray-800 text-gray-300 hover:bg-gray-800 hover:text-white rounded-lg transition"
           >
             Voltar
           </Link>
@@ -152,7 +143,7 @@ export function CostPlannerLayout() {
           </div>
 
           {/* Coluna Direita - Resumo Fixo (1/3 em lg) */}
-          <div className="lg:col-span-1 h-fit sticky top-6">
+          <div className="lg:col-span-1 h-fit">
             <div className="space-y-4">
               <CostSummaryPanelWithExport
                 totals={totals}
@@ -163,7 +154,7 @@ export function CostPlannerLayout() {
               />
 
               {/* Gráfico de Pizza */}
-              <div className="bg-gradient-to-b from-white/10 to-white/5 border border-white/20 rounded-2xl backdrop-blur-md p-4">
+              <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4">
                 <h3 className="text-sm font-semibold text-white mb-4">
                   Custos por Categoria
                 </h3>
@@ -180,6 +171,7 @@ export function CostPlannerLayout() {
         onClose={() => setAddItemModalOpen(false)}
         onAdd={handleAddItem}
         sectionId={addItemSection}
+        areaUnitLabel={areaUnitLabel}
       />
     </div>
   );
@@ -201,7 +193,7 @@ function CostSummaryPanelWithExport({
   areaUnitLabel,
 }: CostSummaryPanelWithExportProps) {
   return (
-    <div className="flex flex-col h-full bg-gradient-to-b from-white/10 to-white/5 border border-white/20 rounded-2xl backdrop-blur-md overflow-hidden">
+    <div className="flex flex-col h-full bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
       <div className="flex-1 p-6 space-y-6 overflow-y-auto">
 
         {/* Custo Total */}
@@ -239,17 +231,17 @@ function CostSummaryPanelWithExport({
       </div>
 
       {/* Rodapé com botões */}
-      <div className="border-t border-white/10 p-4 space-y-2 bg-white/5">
+      <div className="border-t border-gray-800 p-4 space-y-2 bg-gray-900">
         <button
           onClick={onExport}
           disabled={isExporting}
-          className="w-full px-4 py-2 bg-gradient-to-r from-blue-500/20 to-blue-500/10 border border-blue-500/40 text-blue-300 hover:from-blue-500/30 hover:to-blue-500/20 rounded-lg transition font-medium text-sm disabled:opacity-50"
+          className="w-full px-4 py-2 bg-blue-500/20 border border-blue-500/40 text-blue-300 hover:bg-blue-500/30 rounded-lg transition font-medium text-sm disabled:opacity-50"
         >
           {isExporting ? "📄 Gerando PDF..." : "📄 Exportar PDF"}
         </button>
         <button
           onClick={onClear}
-          className="w-full px-4 py-2 bg-gradient-to-r from-red-500/20 to-red-500/10 border border-red-500/40 text-red-300 hover:from-red-500/30 hover:to-red-500/20 rounded-lg transition font-medium text-sm"
+          className="w-full px-4 py-2 bg-red-500/20 border border-red-500/40 text-red-300 hover:bg-red-500/30 rounded-lg transition font-medium text-sm"
         >
           🗑️ Limpar Formulário
         </button>

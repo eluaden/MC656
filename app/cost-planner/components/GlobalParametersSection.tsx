@@ -38,32 +38,42 @@ export function GlobalParametersSection({
             <div className="space-y-4">
                 <div className="flex flex-col gap-2">
                     <label className="text-sm font-medium text-gray-200">Cultura</label>
-                    <select
-                        value={parameters.crop}
-                        onChange={(e) => onUpdate({ crop: e.target.value as Crop })}
-                        className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition"
-                    >
-                        {CROPS.map((crop) => (
-                            <option key={crop} value={crop} className="text-black">
-                                {crop}
-                            </option>
-                        ))}
-                    </select>
+                    <div className="relative">
+                        <select
+                            value={parameters.crop}
+                            onChange={(e) => onUpdate({ crop: e.target.value as Crop })}
+                            className="appearance-none w-full bg-transparent text-white font-medium border border-gray-700 rounded-lg px-3 py-2 pr-8 focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 cursor-pointer transition-all hover:border-gray-600"
+                        >
+                            {CROPS.map((crop) => (
+                                <option key={crop} value={crop} className="text-black">
+                                    {crop}
+                                </option>
+                            ))}
+                        </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-emerald-400">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                        </div>
+                    </div>
                 </div>
 
                 <div className="flex flex-col gap-2">
-                    <label className="text-sm font-medium text-gray-200">Unidade de Área</label>
-                    <select
-                        value={parameters.areaUnit}
-                        onChange={(e) => onUpdate({ areaUnit: e.target.value as AreaUnit })}
-                        className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition"
-                    >
-                        {AREA_UNITS.map((unit) => (
-                            <option key={unit.value} value={unit.value} className="text-black">
-                                {unit.label}
-                            </option>
-                        ))}
-                    </select>
+                    <label className="text-sm font-medium text-gray-200">Área</label>
+                    <div className="relative">
+                        <select
+                            value={parameters.areaUnit}
+                            onChange={(e) => onUpdate({ areaUnit: e.target.value as AreaUnit })}
+                            className="appearance-none w-full bg-transparent text-white font-medium border border-gray-700 rounded-lg px-3 py-2 pr-8 focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 cursor-pointer transition-all hover:border-gray-600"
+                        >
+                            {AREA_UNITS.map((unit) => (
+                                <option key={unit.value} value={unit.value} className="text-black">
+                                    {unit.label}
+                                </option>
+                            ))}
+                        </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-emerald-400">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                        </div>
+                    </div>
                 </div>
 
                 <NumericInput

@@ -49,10 +49,10 @@ export function NumericInput({
           min={min}
           max={max}
           step={step}
-          className={`w-full px-3 py-2 bg-white/10 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition ${
+          className={`w-full px-3 py-2 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition ${
             error
-              ? "border-red-500 focus:ring-red-500"
-              : "border-white/20 focus:ring-emerald-500"
+              ? "bg-red-950/20 border-red-500 focus:ring-red-500"
+              : "bg-gray-900 border-gray-800 focus:ring-emerald-500"
           }`}
         />
         {suffix && (

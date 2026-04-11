@@ -20,10 +20,10 @@ export function Accordion({
   const [isOpen, setIsOpen] = useState(isDefaultOpen);
 
   return (
-    <div className="border border-white/20 rounded-lg overflow-hidden bg-white/5 hover:bg-white/10 transition-all">
+    <div className="border border-gray-800 rounded-lg overflow-hidden bg-gray-900 hover:border-gray-700 transition-all">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-4 py-3 flex items-center justify-between bg-gradient-to-r from-white/5 to-transparent hover:from-white/10 transition-all"
+        className="w-full px-4 py-3 flex items-center justify-between bg-gray-900 hover:bg-gray-800 transition-colors"
       >
         <div className="flex flex-col items-start gap-1">
           <h3 className="font-semibold text-white">{title}</h3>
@@ -53,7 +53,7 @@ export function Accordion({
       </button>
 
       {isOpen && (
-        <div className="px-4 py-4 border-t border-white/10 bg-white/3">
+        <div className="px-4 py-4 border-t border-gray-800 bg-black">
           {children}
         </div>
       )}
