@@ -12,31 +12,40 @@ import {
   AreaUnit,
 } from "../types";
 
-const STORAGE_KEY = "costPlannerProjects";
-const CURRENT_PROJECT_KEY = "costPlannerCurrentProject";
+const STORAGE_KEY = "costPlannerState";
+
+const DEFAULT_STATE: CostPlannerState = {
+  globalParameters: {
+    crop: "Soja" as Crop,
+    area: 100,
+    areaUnit: "hectares" as AreaUnit,
+  },
+  items: getDefaultItems(),
+};
 
 export function useCostPlanner() {
-  const [state, setState] = useState<CostPlannerState>({
-    globalParameters: {
-      crop: "Soja" as Crop,
-      area: 100,
-      areaUnit: "hectares" as AreaUnit,
-    },
-    items: getDefaultItems()
-  });
+  const [state, setState] = useState<CostPlannerState>(DEFAULT_STATE);
+  const [isLoaded, setIsLoaded] = useState(false);
 
-  // Carregar projeto salvo do localStorage
+  // Load from localStorage after mount (avoids hydration mismatch)
   useEffect(() => {
-    const savedProjectName = localStorage.getItem(CURRENT_PROJECT_KEY);
-    if (savedProjectName) {
-      const savedProjects = JSON.parse(
-        localStorage.getItem(STORAGE_KEY) || "{}"
-      );
-      if (savedProjects[savedProjectName]) {
-        setState(savedProjects[savedProjectName]);
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        setState(JSON.parse(saved));
+      } catch {
+        // corrupted data, keep defaults
       }
     }
+    setIsLoaded(true);
   }, []);
+
+  // Auto-save to localStorage whenever state changes (only after initial load)
+  useEffect(() => {
+    if (isLoaded) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+  }, [state, isLoaded]);
 
   // ==================== Cálculos ====================
 
@@ -134,19 +143,20 @@ export function useCostPlanner() {
   // ==================== Persistência ====================
 
   const saveProject = useCallback(() => {
+    // State is auto-saved, but this can be used for explicit feedback
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [state]);
 
   const clearForm = useCallback(() => {
-    setState({
+    const defaults = {
       globalParameters: {
         crop: "Soja" as Crop,
         area: 100,
         areaUnit: "hectares" as AreaUnit,
       },
       items: getDefaultItems()
-    });
-    localStorage.removeItem(CURRENT_PROJECT_KEY);
+    };
+    setState(defaults);
   }, []);
 
   // ==================== Acesso aos dados ====================
