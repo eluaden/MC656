@@ -108,6 +108,8 @@ const styles = StyleSheet.create({
 });
 
 export function CostPlannerPDF({ state, totals }: PDFExportProps) {
+  const areaUnitLabel = state.globalParameters.areaUnit === "m²" ? "m²" : "Hectares";
+
   const itemsBySection = {
     preparo: state.items.filter((item) => item.section === "Preparo"),
     plantio: state.items.filter((item) => item.section === "Plantio"),
@@ -141,7 +143,7 @@ export function CostPlannerPDF({ state, totals }: PDFExportProps) {
           <View style={styles.tableRow}>
             <Text style={[styles.tableCell, { flex: 2 }]}>Área de Plantio:</Text>
             <Text style={styles.tableCell}>
-              {state.globalParameters.area} Hectares
+              {state.globalParameters.area} {areaUnitLabel}
             </Text>
           </View>
         </View>
@@ -165,7 +167,7 @@ export function CostPlannerPDF({ state, totals }: PDFExportProps) {
               R$ {totals.totalCost.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}
             </Text>
             <Text style={[styles.totalText, { marginTop: 10 }]}>
-              Custo por Hectare: R${" "}
+              Custo por {areaUnitLabel === "m²" ? "m²" : "Hectare"}: R${" "}
               {totals.costPerHectare.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}
             </Text>
           </View>
@@ -182,7 +184,7 @@ export function CostPlannerPDF({ state, totals }: PDFExportProps) {
                 <View style={[styles.tableRow, styles.tableHeader]}>
                   <Text style={[styles.tableCell, { flex: 2 }]}>Item</Text>
                   <Text style={styles.tableCell}>Preço Unit.</Text>
-                  <Text style={styles.tableCell}>Qtd/Ha</Text>
+                  <Text style={styles.tableCell}>Qtd/{areaUnitLabel === "m²" ? "m²" : "Ha"}</Text>
                   <Text style={styles.tableCell}>Total</Text>
                 </View>
                 {items.map((item) => {

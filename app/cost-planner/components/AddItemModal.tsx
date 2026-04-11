@@ -48,7 +48,6 @@ export function AddItemModal({
             unit,
         });
 
-        // Reset form
         setItemName("");
         setCategory("Insumos");
         setUnit("kg");

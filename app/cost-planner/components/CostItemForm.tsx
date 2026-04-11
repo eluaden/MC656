@@ -9,6 +9,7 @@ interface CostItemFormProps {
   onUpdate: (id: string, updates: Partial<CostItem>) => void;
   onDelete: (id: string) => void;
   area: number;
+  areaUnitLabel: string;
 }
 
 export function CostItemForm({
@@ -16,6 +17,7 @@ export function CostItemForm({
   onUpdate,
   onDelete,
   area,
+  areaUnitLabel,
 }: CostItemFormProps) {
   const itemCost = item.pricePerUnit * item.quantityPerHectare * area;
 
@@ -46,7 +48,7 @@ export function CostItemForm({
           step={0.01}
         />
         <NumericInput
-          label={`Qtd por Ha (${item.unit})`}
+          label={`Qtd por ${areaUnitLabel} (${item.unit})`}
           value={item.quantityPerHectare}
           onChange={(value) =>
             onUpdate(item.id, { quantityPerHectare: value })

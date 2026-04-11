@@ -1,6 +1,7 @@
 // Tipos para o Cost Planner
 
 export type Crop = "Soja" | "Café" | "Cana de açúcar";
+export type AreaUnit = "hectares" | "m²";
 export type SectionType = "Preparo" | "Plantio" | "Manejo" | "Colheita";
 export type CostCategory = "Insumos" | "Mecanização" | "Mão de Obra";
 
@@ -16,7 +17,8 @@ export interface CostItem {
 
 export interface GlobalParameters {
   crop: Crop;
-  area: number; // hectares
+  area: number;
+  areaUnit: AreaUnit;
 }
 
 export interface CostPlannerState {

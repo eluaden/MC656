@@ -47,6 +47,8 @@ export function CostPlannerLayout() {
     clearForm,
   } = useCostPlanner();
 
+  const areaUnitLabel = state.globalParameters.areaUnit === "m²" ? "m²" : "Hectare";
+
   const [addItemModalOpen, setAddItemModalOpen] = useState(false);
   const [addItemSection, setAddItemSection] = useState<"Preparo" | "Plantio" | "Manejo" | "Colheita">("Preparo");
   const [isExporting, setIsExporting] = useState(false);
@@ -143,6 +145,7 @@ export function CostPlannerLayout() {
                 onUpdateItem={updateItem}
                 onDeleteItem={deleteItem}
                 area={state.globalParameters.area}
+                areaUnitLabel={areaUnitLabel}
                 sectionTotal={totals.sectionTotals[section.id]}
               />
             ))}
@@ -156,6 +159,7 @@ export function CostPlannerLayout() {
                 onClear={handleClearForm}
                 onExport={handleExportPDF}
                 isExporting={isExporting}
+                areaUnitLabel={areaUnitLabel}
               />
 
               {/* Gráfico de Pizza */}
@@ -186,6 +190,7 @@ interface CostSummaryPanelWithExportProps {
   onClear: () => void;
   onExport: () => Promise<void>;
   isExporting: boolean;
+  areaUnitLabel: string;
 }
 
 function CostSummaryPanelWithExport({
@@ -193,6 +198,7 @@ function CostSummaryPanelWithExport({
   onClear,
   onExport,
   isExporting,
+  areaUnitLabel,
 }: CostSummaryPanelWithExportProps) {
   return (
     <div className="flex flex-col h-full bg-gradient-to-b from-white/10 to-white/5 border border-white/20 rounded-2xl backdrop-blur-md overflow-hidden">
@@ -208,7 +214,7 @@ function CostSummaryPanelWithExport({
 
         {/* Custo por Hectare */}
         <div className="p-4 bg-gradient-to-br from-blue-500/20 to-blue-500/10 border border-blue-500/30 rounded-xl">
-          <p className="text-xs text-blue-300 mb-2">CUSTO POR HECTARE</p>
+          <p className="text-xs text-blue-300 mb-2">CUSTO POR {areaUnitLabel.toUpperCase()}</p>
           <p className="text-2xl font-bold text-blue-300">
             R$ {totals.costPerHectare.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}
           </p>

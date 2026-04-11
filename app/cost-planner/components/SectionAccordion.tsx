@@ -15,6 +15,7 @@ interface SectionAccordionProps {
   onUpdateItem: (id: string, updates: Partial<CostItem>) => void;
   onDeleteItem: (id: string) => void;
   area: number;
+  areaUnitLabel: string;
   sectionTotal: number;
 }
 
@@ -27,6 +28,7 @@ export function SectionAccordion({
   onUpdateItem,
   onDeleteItem,
   area,
+  areaUnitLabel,
   sectionTotal,
 }: SectionAccordionProps) {
   return (
@@ -47,6 +49,7 @@ export function SectionAccordion({
               onUpdate={onUpdateItem}
               onDelete={onDeleteItem}
               area={area}
+              areaUnitLabel={areaUnitLabel}
             />
           ))}
         </div>

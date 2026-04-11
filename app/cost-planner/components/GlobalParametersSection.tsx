@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Crop, GlobalParameters } from "../types";
+import { Crop, AreaUnit, GlobalParameters } from "../types";
 import { Accordion } from "./Accordion";
 import { NumericInput } from "./NumericInput";
 
@@ -11,6 +11,10 @@ interface GlobalParametersSectionProps {
 }
 
 const CROPS: Crop[] = ["Soja", "Café", "Cana de açúcar"];
+const AREA_UNITS: { value: AreaUnit; label: string; abbr: string }[] = [
+    { value: "hectares", label: "Hectares", abbr: "ha" },
+    { value: "m²", label: "Metros quadrados (m²)", abbr: "m²" },
+];
 
 export function GlobalParametersSection({
     parameters,
@@ -21,6 +25,8 @@ export function GlobalParametersSection({
             onUpdate({ area: value });
         }
     };
+
+    const currentUnit = AREA_UNITS.find((u) => u.value === parameters.areaUnit) ?? AREA_UNITS[0];
 
     return (
         <Accordion
@@ -45,20 +51,35 @@ export function GlobalParametersSection({
                     </select>
                 </div>
 
+                <div className="flex flex-col gap-2">
+                    <label className="text-sm font-medium text-gray-200">Unidade de Área</label>
+                    <select
+                        value={parameters.areaUnit}
+                        onChange={(e) => onUpdate({ areaUnit: e.target.value as AreaUnit })}
+                        className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition"
+                    >
+                        {AREA_UNITS.map((unit) => (
+                            <option key={unit.value} value={unit.value} className="text-black">
+                                {unit.label}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
                 <NumericInput
                     label="Área de Plantio"
                     value={parameters.area}
                     onChange={handleAreaChange}
-                    suffix=" Hectares"
+                    suffix={` ${currentUnit.label}`}
                     min={0}
-                    step={0.01}
+                    step={parameters.areaUnit === "m²" ? 1 : 0.01}
                     required
                 />
 
                 <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
                     <p className="text-xs text-gray-400">Cultura: {parameters.crop}</p>
                     <p className="text-sm font-semibold text-emerald-300 mt-1">
-                        {parameters.area} ha
+                        {parameters.area} {currentUnit.abbr}
                     </p>
                 </div>
             </div>

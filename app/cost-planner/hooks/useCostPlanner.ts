@@ -9,6 +9,7 @@ import {
   Crop,
   SectionType,
   CostCategory,
+  AreaUnit,
 } from "../types";
 
 const STORAGE_KEY = "costPlannerProjects";
@@ -19,6 +20,7 @@ export function useCostPlanner() {
     globalParameters: {
       crop: "Soja" as Crop,
       area: 100,
+      areaUnit: "hectares" as AreaUnit,
     },
     items: getDefaultItems()
   });
@@ -74,7 +76,7 @@ export function useCostPlanner() {
         : 0;
 
     return {
-      itemTotalCost: 0, // será calculado individualmente quando necessário
+      itemTotalCost: 0,
       sectionTotals,
       categoryTotals,
       totalCost,
@@ -140,6 +142,7 @@ export function useCostPlanner() {
       globalParameters: {
         crop: "Soja" as Crop,
         area: 100,
+        areaUnit: "hectares" as AreaUnit,
       },
       items: getDefaultItems()
     });
