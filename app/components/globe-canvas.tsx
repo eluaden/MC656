@@ -18,6 +18,7 @@ export default function GlobeCanvas() {
   const containerRef = useRef<HTMLDivElement>(null);
   const globeRef = useRef<GlobeMethods | null>(null);
   const [globeSize, setGlobeSize] = useState({ width: 0, height: 0 });
+  const [isLoadingSoil, setIsLoadingSoil] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState<{
     lat: number;
     lng: number;
@@ -142,27 +143,60 @@ export default function GlobeCanvas() {
         pointRadius={0.8}
         pointsMerge={false}
 
-        onGlobeClick={({ lat, lng }) => {
-          const info = getRegionInfo(lat, lng);
+        onGlobeClick={async ({ lat, lng }) => {
+          try {
+            setIsLoadingSoil(true);
 
-          setSelectedRegion({
-            lat,
-            lng,
-            ...info,
-          });
+            setSelectedRegion({
+              lat,
+              lng,
+              name: "Região selecionada",
+              climate: "Carregando...",
+              soil: "Carregando informações do solo...",
+              crop: "Calculando...",
+            });
 
-          setSelectedMarker([
-          {
-            lat,
-            lng,
-            name: info.name,
-          },
-        ]);
+            setSelectedMarker([
+              {
+                lat,
+                lng,
+                name: "Região selecionada",
+              },
+            ]);
 
-          globeRef.current?.pointOfView(
-            { lat, lng, altitude: 1.4 },
-            1000
-          );
+            globeRef.current?.pointOfView(
+              { lat, lng, altitude: 1.4 },
+              1000
+            );
+
+            const roundedLat = Number(lat.toFixed(3));
+            const roundedLng = Number(lng.toFixed(3));
+
+            const response = await fetch(`/api/soil?lat=${roundedLat}&lng=${roundedLng}`);
+            const data = await response.json();
+
+            setSelectedRegion({
+              lat,
+              lng,
+              name: "Região selecionada",
+              climate: "Clima ainda não integrado",
+              soil: data.hasData
+                ? data.soilSummary
+                : "Sem dados de solo nesse ponto exato. Tente clicar em uma área rural próxima.",
+              crop: "Sugestão futura baseada em solo + clima",
+            });
+          } catch {
+            setSelectedRegion({
+              lat,
+              lng,
+              name: "Região selecionada",
+              climate: "Clima ainda não integrado",
+              soil: "Erro ao consultar o SoilGrids",
+              crop: "Sugestão indisponível",
+            });
+          } finally {
+            setIsLoadingSoil(false);
+          }
         }}
 
         onGlobeReady={() => {
@@ -177,7 +211,18 @@ export default function GlobeCanvas() {
 
           globeRef.current?.pointOfView({ lat: 12, lng: -25, altitude: 2.1 }, 0);
         }}
+
+        
       />
+      {isLoadingSoil && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/30 backdrop-blur-sm">
+          <div className="rounded-2xl bg-white/90 px-6 py-4 shadow-xl">
+            <p className="text-sm font-semibold text-slate-700 animate-pulse">
+              Carregando informações do solo...
+            </p>
+          </div>
+        </div>
+      )}
 
 
       {selectedRegion && (
@@ -201,6 +246,17 @@ export default function GlobeCanvas() {
             <p className="text-sm font-semibold text-slate-700">Solo</p>
             <p className="text-sm text-slate-600">{selectedRegion.soil}</p>
           </div>
+          <div className="mt-4">
+            <p className="text-sm font-semibold text-slate-700">Solo</p>
+            {isLoadingSoil ? (
+              <p className="text-sm text-slate-500 animate-pulse">
+                Carregando informações do solo...
+              </p>
+            ) : (
+              <p className="text-sm text-slate-600">{selectedRegion.soil}</p>
+            )}
+          </div>
+
         </div>
       )}
 
@@ -211,16 +267,19 @@ export default function GlobeCanvas() {
           </h2>
 
           <div className="mt-4">
-            <p className="text-sm font-semibold text-slate-700">Cultura sugerida</p>
-            <p className="text-sm text-slate-600">{selectedRegion.crop}</p>
+            <p className="text-sm font-semibold text-slate-700">Próximo passo</p>
+            {isLoadingSoil ? (
+              <p className="text-sm text-slate-500 animate-pulse">
+                Buscando dados para análise...
+              </p>
+            ) : (
+              <p className="text-sm text-slate-600">
+                Simular produtividade, calendário e necessidade hídrica.
+              </p>
+            )}
           </div>
 
-          <div className="mt-4">
-            <p className="text-sm font-semibold text-slate-700">Próximo passo</p>
-            <p className="text-sm text-slate-600">
-              Simular produtividade, calendário e necessidade hídrica.
-            </p>
-          </div>
+          
         </div>
       )}
 
