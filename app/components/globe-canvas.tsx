@@ -33,7 +33,6 @@ export default function GlobeCanvas() {
     { lat: number; lng: number; name: string }[]
   >([]);
 
- 
   useEffect(() => {
     const updateSize = () => {
       setGlobeSize({
@@ -72,22 +71,21 @@ export default function GlobeCanvas() {
   return (
     <div
       ref={containerRef}
-      className="h-screen w-screen overflow-hidden bg-gradient-to-b from-sky-100 via-cyan-50 to-emerald-50"
+      className="h-screen w-screen overflow-hidden bg-linear-to-b from-sky-100 via-cyan-50 to-emerald-50"
     >
       <Globe
         ref={globeRef}
         width={Math.max(globeSize.width, 1)}
         height={Math.max(globeSize.height, 1)}
         backgroundColor="rgba(0,0,0,0)"
-        globeImageUrl="/globe_textures/earth_cartoon.jpg"
+        globeImageUrl="/globe_textures/8k_earth_daymap.jpg"
         atmosphereAltitude={0.5}
         atmosphereColor="#93c5fd"
-
         // show a single pin for the selected region
         htmlElementsData={selectedMarker}
         htmlLat="lat"
         htmlLng="lng"
-        htmlElement={(d) => {
+        htmlElement={() => {
           const el = document.createElement("div");
           el.innerHTML = `
             <div style="display:flex; flex-direction:column; align-items:center; transform:translate(-50%, -100%);">
@@ -116,7 +114,6 @@ export default function GlobeCanvas() {
         pointColor="color"
         pointRadius={0.8}
         pointsMerge={false}
-
         onGlobeClick={async ({ lat, lng }) => {
           try {
             setIsLoadingSoil(true);
@@ -138,26 +135,39 @@ export default function GlobeCanvas() {
               },
             ]);
 
-            globeRef.current?.pointOfView(
-              { lat, lng, altitude: 1.4 },
-              1000
-            );
+            globeRef.current?.pointOfView({ lat, lng, altitude: 1.4 }, 1000);
 
             const roundedLat = Number(lat.toFixed(3));
             const roundedLng = Number(lng.toFixed(3));
 
-            const [soilResponse, weatherResponse] = await Promise.all([
-              fetch(`/api/soil?lat=${roundedLat}&lng=${roundedLng}`),
-              fetch(`/api/weather?lat=${roundedLat}&lng=${roundedLng}`),
-            ]);
+            const [soilResponse, weatherResponse, locationResponse] =
+              await Promise.all([
+                fetch(`/api/soil?lat=${roundedLat}&lng=${roundedLng}`),
+                fetch(`/api/weather?lat=${roundedLat}&lng=${roundedLng}`),
+                fetch(`/api/location?lat=${roundedLat}&lng=${roundedLng}`),
+              ]);
 
             const soilData = await soilResponse.json();
             const weatherData = await weatherResponse.json();
+            const locationData = await locationResponse.json();
+
+            const locationName =
+              locationData.locationLabel ??
+              locationData.cityName ??
+              "Região selecionada";
+
+            setSelectedMarker([
+              {
+                lat,
+                lng,
+                name: locationName,
+              },
+            ]);
 
             setSelectedRegion({
               lat,
               lng,
-              name: "Região selecionada",
+              name: locationName,
               climate: weatherData.ok
                 ? weatherData.climateSummary
                 : "Não foi possível carregar o clima.",
@@ -166,8 +176,6 @@ export default function GlobeCanvas() {
                 : "Sem dados de solo nesse ponto exato. Tente clicar em uma área rural próxima.",
               crop: "Sugestão futura baseada em solo + clima",
             });
- 
-            
           } catch {
             setSelectedRegion({
               lat,
@@ -181,7 +189,6 @@ export default function GlobeCanvas() {
             setIsLoadingSoil(false);
           }
         }}
-
         onGlobeReady={() => {
           const controls = globeRef.current?.controls();
           if (!controls) return;
@@ -192,10 +199,11 @@ export default function GlobeCanvas() {
           controls.autoRotate = true;
           controls.autoRotateSpeed = 0.35;
 
-          globeRef.current?.pointOfView({ lat: 12, lng: -25, altitude: 2.1 }, 0);
+          globeRef.current?.pointOfView(
+            { lat: 12, lng: -25, altitude: 2.1 },
+            0,
+          );
         }}
-
-        
       />
       {isLoadingSoil && (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/30 backdrop-blur-sm">
@@ -206,7 +214,6 @@ export default function GlobeCanvas() {
           </div>
         </div>
       )}
-
 
       {selectedRegion && (
         <div className="absolute left-6 top-1/2 z-10 w-72 -translate-y-1/2 rounded-3xl bg-white/90 p-5 shadow-xl backdrop-blur-md">
@@ -235,7 +242,6 @@ export default function GlobeCanvas() {
               <p className="text-sm text-slate-600">{selectedRegion.soil}</p>
             )}
           </div>
-
         </div>
       )}
 
@@ -246,7 +252,9 @@ export default function GlobeCanvas() {
           </h2>
 
           <div className="mt-4">
-            <p className="text-sm font-semibold text-slate-700">Próximo passo</p>
+            <p className="text-sm font-semibold text-slate-700">
+              Próximo passo
+            </p>
             {isLoadingSoil ? (
               <p className="text-sm text-slate-500 animate-pulse">
                 Buscando dados para análise...
@@ -257,12 +265,8 @@ export default function GlobeCanvas() {
               </p>
             )}
           </div>
-
-          
         </div>
       )}
-
-
     </div>
   );
 }
