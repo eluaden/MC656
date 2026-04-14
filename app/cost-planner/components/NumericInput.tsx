@@ -43,7 +43,7 @@ export function NumericInput({
       <div className="relative">
         <input
           type="number"
-          value={value === 0 && !value ? "" : value}
+          value={value ?? 0}
           onChange={handleChange}
           placeholder={placeholder}
           min={min}

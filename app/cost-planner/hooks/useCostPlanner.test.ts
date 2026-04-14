@@ -55,6 +55,7 @@ describe("useCostPlanner", () => {
           costCategory: "Insumos",
           pricePerUnit: 50,
           quantityPerAreaUnit: 10,
+          quantityType: "per_area",
           unit: "kg",
         });
       });
@@ -76,6 +77,7 @@ describe("useCostPlanner", () => {
           costCategory: "Insumos",
           pricePerUnit: 10,
           quantityPerAreaUnit: 5,
+          quantityType: "per_area",
           unit: "L",
         });
       });
@@ -87,6 +89,7 @@ describe("useCostPlanner", () => {
           costCategory: "Insumos",
           pricePerUnit: 20,
           quantityPerAreaUnit: 3,
+          quantityType: "per_area",
           unit: "L",
         });
       });
@@ -245,6 +248,7 @@ describe("useCostPlanner", () => {
         costCategory: "Insumos",
         pricePerUnit: 10,
         quantityPerAreaUnit: 5,
+        quantityType: "per_area",
         unit: "kg",
       };
 
@@ -266,11 +270,30 @@ describe("useCostPlanner", () => {
         costCategory: "Insumos",
         pricePerUnit: 10,
         quantityPerAreaUnit: 5,
+        quantityType: "per_area",
         unit: "kg",
       };
 
       const cost = result.current.calculateItemCost(testItem);
       expect(cost).toBe(10 * 5 * 50); // 2500
+    });
+
+    it("calculates fixed quantity cost without area multiplication", () => {
+      const { result } = renderHook(() => useCostPlanner());
+
+      const testItem: CostItem = {
+        id: "test-fixed",
+        section: "Colheita",
+        name: "Máquina",
+        costCategory: "Mecanização",
+        pricePerUnit: 5000,
+        quantityPerAreaUnit: 2,
+        quantityType: "fixed",
+        unit: "hora",
+      };
+
+      const cost = result.current.calculateItemCost(testItem);
+      expect(cost).toBe(5000 * 2); // 10000, no area multiplication
     });
   });
 
@@ -283,7 +306,7 @@ describe("useCostPlanner", () => {
 
       let expectedTotal = 0;
       state.items.forEach((item) => {
-        expectedTotal += item.pricePerUnit * item.quantityPerAreaUnit * state.globalParameters.area;
+        expectedTotal += result.current.calculateItemCost(item);
       });
 
       expect(totals.totalCost).toBe(expectedTotal);
@@ -303,7 +326,7 @@ describe("useCostPlanner", () => {
       const preparoItems = state.items.filter((i) => i.section === "Preparo");
       let expectedPreparo = 0;
       preparoItems.forEach((item) => {
-        expectedPreparo += item.pricePerUnit * item.quantityPerAreaUnit * state.globalParameters.area;
+        expectedPreparo += result.current.calculateItemCost(item);
       });
 
       expect(totals.sectionTotals["Preparo"]).toBe(expectedPreparo);
@@ -316,7 +339,7 @@ describe("useCostPlanner", () => {
       const insumosItems = state.items.filter((i) => i.costCategory === "Insumos");
       let expectedInsumos = 0;
       insumosItems.forEach((item) => {
-        expectedInsumos += item.pricePerUnit * item.quantityPerAreaUnit * state.globalParameters.area;
+        expectedInsumos += result.current.calculateItemCost(item);
       });
 
       expect(totals.categoryTotals["Insumos"]).toBe(expectedInsumos);

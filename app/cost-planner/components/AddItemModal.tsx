@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { SectionType, CostCategory, CurrencyConfig } from "../types";
+import { SectionType, CostCategory, CurrencyConfig, QuantityType } from "../types";
 import { NumericInput } from "./NumericInput";
 
 interface AddItemModalProps {
@@ -14,13 +14,14 @@ interface AddItemModalProps {
         costCategory: CostCategory;
         pricePerUnit: number;
         quantityPerAreaUnit: number;
+        quantityType: QuantityType;
         unit: string;
     }) => void;
     onClose: () => void;
     currency: CurrencyConfig;
 }
 
-const UNIT_OPTIONS = ["kg", "L", "pessoa-dia", "hora"];
+const UNIT_OPTIONS = ["kg", "L", "unidade", "pessoa-dia", "hora"];
 const CATEGORY_OPTIONS: CostCategory[] = ["Insumos", "Mecanização", "Mão de Obra"];
 const SECTION_LABELS: Record<SectionType, string> = {
     Preparo: "Preparação do Solo",
@@ -42,6 +43,7 @@ export function AddItemModal({
     const [unit, setUnit] = useState("kg");
     const [pricePerUnit, setPricePerUnit] = useState(0);
     const [quantityPerAreaUnit, setQuantityPerAreaUnit] = useState(0);
+    const [quantityType, setQuantityType] = useState<QuantityType>("per_area");
 
     const handleAdd = () => {
         if (!itemName.trim()) {
@@ -55,6 +57,7 @@ export function AddItemModal({
             costCategory: category,
             pricePerUnit,
             quantityPerAreaUnit,
+            quantityType,
             unit,
         });
 
@@ -63,6 +66,7 @@ export function AddItemModal({
         setUnit("kg");
         setPricePerUnit(0);
         setQuantityPerAreaUnit(0);
+        setQuantityType("per_area");
         onClose();
     };
 
@@ -139,9 +143,38 @@ export function AddItemModal({
                     step={0.01}
                 />
 
+                {/* Tipo de Quantidade */}
+                <div className="flex flex-col gap-2">
+                    <label className="text-sm font-medium text-gray-200">Tipo de Quantidade</label>
+                    <div className="flex gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setQuantityType("per_area")}
+                            className={`flex-1 px-3 py-2 text-sm rounded-lg border transition-all ${
+                                quantityType === "per_area"
+                                    ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-300"
+                                    : "bg-transparent border-gray-700 text-gray-400 hover:border-gray-600"
+                            }`}
+                        >
+                            Por {areaUnitLabel}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setQuantityType("fixed")}
+                            className={`flex-1 px-3 py-2 text-sm rounded-lg border transition-all ${
+                                quantityType === "fixed"
+                                    ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-300"
+                                    : "bg-transparent border-gray-700 text-gray-400 hover:border-gray-600"
+                            }`}
+                        >
+                            Quantidade fixa
+                        </button>
+                    </div>
+                </div>
+
                 {/* Quantidade */}
                 <NumericInput
-                    label={`Quantidade por ${areaUnitLabel} (${unit})`}
+                    label={quantityType === "fixed" ? `Quantidade total (${unit})` : `Quantidade por ${areaUnitLabel} (${unit})`}
                     value={quantityPerAreaUnit}
                     onChange={setQuantityPerAreaUnit}
                     min={0}

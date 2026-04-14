@@ -244,13 +244,13 @@ function CostSummaryPanelWithExport({
           disabled={isExporting}
           className="w-full px-4 py-2 bg-blue-500/20 border border-blue-500/40 text-blue-300 hover:bg-blue-500/30 rounded-lg transition font-medium text-sm disabled:opacity-50"
         >
-          {isExporting ? "📄 Gerando PDF..." : "📄 Exportar PDF"}
+          {isExporting ? "📄 Gerando PDF..." : "Exportar PDF"}
         </button>
         <button
           onClick={onClear}
           className="w-full px-4 py-2 bg-red-500/20 border border-red-500/40 text-red-300 hover:bg-red-500/30 rounded-lg transition font-medium text-sm"
         >
-          🗑️ Limpar Formulário
+          Limpar Formulário
         </button>
       </div>
     </div>

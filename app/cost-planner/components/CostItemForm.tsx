@@ -22,7 +22,9 @@ export function CostItemForm({
   areaUnitLabel,
   currency,
 }: CostItemFormProps) {
-  const itemCost = item.pricePerUnit * item.quantityPerAreaUnit * area;
+  const itemCost = item.quantityType === "fixed"
+    ? item.pricePerUnit * item.quantityPerAreaUnit
+    : item.pricePerUnit * item.quantityPerAreaUnit * area;
 
   return (
     <div className="p-3 bg-gray-900 border border-gray-800 rounded-lg space-y-3">
@@ -51,7 +53,7 @@ export function CostItemForm({
           step={0.01}
         />
         <NumericInput
-          label={`Qtd por ${areaUnitLabel} (${item.unit})`}
+          label={item.quantityType === "fixed" ? `Qtd total (${item.unit})` : `Qtd por ${areaUnitLabel} (${item.unit})`}
           value={item.quantityPerAreaUnit}
           onChange={(value) =>
             onUpdate(item.id, { quantityPerAreaUnit: value })

@@ -12,6 +12,8 @@ export interface CurrencyConfig {
   decimalPlaces: number;
 }
 
+export type QuantityType = "per_area" | "fixed";
+
 export interface CostItem {
   id: string;
   section: SectionType;
@@ -19,6 +21,7 @@ export interface CostItem {
   costCategory: CostCategory;
   pricePerUnit: number;
   quantityPerAreaUnit: number;
+  quantityType: QuantityType;
   unit: string; // ex: "kg", "L", "Tonelada", "hora"
 }
 

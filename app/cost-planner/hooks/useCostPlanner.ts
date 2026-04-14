@@ -48,7 +48,11 @@ export function useCostPlanner() {
             // Garantir que currency tenha valores padrão se não existir
             currency: parsedState.globalParameters?.currency || DEFAULT_CURRENCY,
           },
-          items: parsedState.items || [],
+          items: (parsedState.items || []).map((item: any) => ({
+            ...item,
+            quantityPerAreaUnit: item.quantityPerAreaUnit ?? item.quantityPerHectare ?? 0,
+            quantityType: item.quantityType ?? "per_area",
+          })),
         };
         setState(mergedState);
       } catch {
@@ -69,6 +73,9 @@ export function useCostPlanner() {
 
   const calculateItemCost = useCallback(
     (item: CostItem): number => {
+      if (item.quantityType === "fixed") {
+        return item.pricePerUnit * item.quantityPerAreaUnit;
+      }
       return item.pricePerUnit * item.quantityPerAreaUnit * state.globalParameters.area;
     },
     [state.globalParameters.area]
@@ -156,7 +163,7 @@ export function useCostPlanner() {
           },
         };
 
-        // Se a unidade de área mudou, converter as quantidades de insumos
+        // Se a unidade de área mudou, converter as quantidades
         if (
           updates.areaUnit &&
           updates.areaUnit !== prev.globalParameters.areaUnit
@@ -181,13 +188,19 @@ export function useCostPlanner() {
             conversionFactor = 1;
           }
 
-          // Converter apenas as quantidades de INSUMOS
+          const areaConversionFactor = oldUnit === "hectares" && newUnit === "m²"
+            ? 10000
+            : oldUnit === "m²" && newUnit === "hectares"
+              ? 1 / 10000
+              : 1;
+          newState.globalParameters.area = truncate(prev.globalParameters.area * areaConversionFactor);
+
           newState.items = prev.items.map((item) => ({
             ...item,
             quantityPerAreaUnit:
-              item.costCategory === "Insumos"
-                ? truncate(item.quantityPerAreaUnit * conversionFactor)
-                : item.quantityPerAreaUnit,
+              item.quantityType === "fixed"
+                ? item.quantityPerAreaUnit
+                : truncate((item.quantityPerAreaUnit || 0) * conversionFactor),
           }));
         }
 
@@ -253,6 +266,7 @@ function getDefaultItems(): CostItem[] {
       costCategory: "Insumos",
       pricePerUnit: 150,
       quantityPerAreaUnit: 2000,
+      quantityType: "per_area",
       unit: "kg",
     },
     {
@@ -262,6 +276,7 @@ function getDefaultItems(): CostItem[] {
       costCategory: "Insumos",
       pricePerUnit: 120,
       quantityPerAreaUnit: 1000,
+      quantityType: "per_area",
       unit: "kg",
     },
     {
@@ -271,6 +286,7 @@ function getDefaultItems(): CostItem[] {
       costCategory: "Insumos",
       pricePerUnit: 400,
       quantityPerAreaUnit: 50,
+      quantityType: "per_area",
       unit: "kg",
     },
     {
@@ -280,6 +296,7 @@ function getDefaultItems(): CostItem[] {
       costCategory: "Insumos",
       pricePerUnit: 80,
       quantityPerAreaUnit: 2,
+      quantityType: "per_area",
       unit: "L",
     },
     {
@@ -289,6 +306,7 @@ function getDefaultItems(): CostItem[] {
       costCategory: "Insumos",
       pricePerUnit: 3.5,
       quantityPerAreaUnit: 200,
+      quantityType: "per_area",
       unit: "kg",
     },
     {
@@ -298,6 +316,7 @@ function getDefaultItems(): CostItem[] {
       costCategory: "Insumos",
       pricePerUnit: 100,
       quantityPerAreaUnit: 1.5,
+      quantityType: "per_area",
       unit: "L",
     },
     {
@@ -307,6 +326,7 @@ function getDefaultItems(): CostItem[] {
       costCategory: "Mecanização",
       pricePerUnit: 200,
       quantityPerAreaUnit: 1,
+      quantityType: "per_area",
       unit: "hora",
     },
     {
@@ -316,6 +336,7 @@ function getDefaultItems(): CostItem[] {
       costCategory: "Mão de Obra",
       pricePerUnit: 50,
       quantityPerAreaUnit: 2,
+      quantityType: "per_area",
       unit: "pessoa-dia",
     },
   ];
