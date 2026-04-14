@@ -88,7 +88,7 @@ export default function GlobeCanvas() {
         htmlElement={() => {
           const el = document.createElement("div");
           el.innerHTML = `
-            <div style="display:flex; flex-direction:column; align-items:center; transform:translate(-50%, -100%);">
+            <div style="display:flex; flex-direction:column; align-items:center; transform:translate(0%, -50%);">
               <div style="
                 width:18px;
                 height:18px;
@@ -135,7 +135,7 @@ export default function GlobeCanvas() {
               },
             ]);
 
-            globeRef.current?.pointOfView({ lat, lng, altitude: 1.4 }, 1000);
+            globeRef.current?.pointOfView({ lat, lng }, 1000);
 
             const roundedLat = Number(lat.toFixed(3));
             const roundedLng = Number(lng.toFixed(3));
@@ -196,7 +196,7 @@ export default function GlobeCanvas() {
           controls.enablePan = false;
           controls.minDistance = 150;
           controls.maxDistance = 360;
-          controls.autoRotate = true;
+          controls.autoRotate = false;
           controls.autoRotateSpeed = 0.35;
 
           globeRef.current?.pointOfView(
