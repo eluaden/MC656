@@ -33,33 +33,7 @@ export default function GlobeCanvas() {
     { lat: number; lng: number; name: string }[]
   >([]);
 
-  const getRegionInfo = (lat: number, lng: number) => {
-    if (lat < -10 && lng > -75 && lng < -30) {
-      return {
-        name: "Brasil / América do Sul",
-        climate: "Tropical a subtropical",
-        soil: "Varia conforme a região; áreas férteis para várias culturas",
-        crop: "Soja, milho, café e cana",
-      };
-    }
-
-    if (lat > 35 && lng > -10 && lng < 40) {
-      return {
-        name: "Europa / Mediterrâneo",
-        climate: "Temperado a mediterrâneo",
-        soil: "Solo bom para culturas sazonais",
-        crop: "Trigo, uva e oliva",
-      };
-    }
-
-    return {
-      name: "Região selecionada",
-      climate: "Clima a definir",
-      soil: "Solo a analisar",
-      crop: "Culturas sugeridas a calcular",
-    };
-  };
-
+ 
   useEffect(() => {
     const updateSize = () => {
       setGlobeSize({
@@ -172,19 +146,28 @@ export default function GlobeCanvas() {
             const roundedLat = Number(lat.toFixed(3));
             const roundedLng = Number(lng.toFixed(3));
 
-            const response = await fetch(`/api/soil?lat=${roundedLat}&lng=${roundedLng}`);
-            const data = await response.json();
+            const [soilResponse, weatherResponse] = await Promise.all([
+              fetch(`/api/soil?lat=${roundedLat}&lng=${roundedLng}`),
+              fetch(`/api/weather?lat=${roundedLat}&lng=${roundedLng}`),
+            ]);
+
+            const soilData = await soilResponse.json();
+            const weatherData = await weatherResponse.json();
 
             setSelectedRegion({
               lat,
               lng,
               name: "Região selecionada",
-              climate: "Clima ainda não integrado",
-              soil: data.hasData
-                ? data.soilSummary
+              climate: weatherData.ok
+                ? weatherData.climateSummary
+                : "Não foi possível carregar o clima.",
+              soil: soilData.hasData
+                ? soilData.soilSummary
                 : "Sem dados de solo nesse ponto exato. Tente clicar em uma área rural próxima.",
               crop: "Sugestão futura baseada em solo + clima",
             });
+ 
+            
           } catch {
             setSelectedRegion({
               lat,
@@ -242,10 +225,6 @@ export default function GlobeCanvas() {
             <p className="text-sm text-slate-600">{selectedRegion.climate}</p>
           </div>
 
-          <div className="mt-4">
-            <p className="text-sm font-semibold text-slate-700">Solo</p>
-            <p className="text-sm text-slate-600">{selectedRegion.soil}</p>
-          </div>
           <div className="mt-4">
             <p className="text-sm font-semibold text-slate-700">Solo</p>
             {isLoadingSoil ? (
