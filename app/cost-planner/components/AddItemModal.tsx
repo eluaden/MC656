@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { SectionType, CostCategory } from "../types";
+import { SectionType, CostCategory, CurrencyConfig } from "../types";
 import { NumericInput } from "./NumericInput";
 
 interface AddItemModalProps {
@@ -13,10 +13,11 @@ interface AddItemModalProps {
         name: string;
         costCategory: CostCategory;
         pricePerUnit: number;
-        quantityPerHectare: number;
+        quantityPerAreaUnit: number;
         unit: string;
     }) => void;
     onClose: () => void;
+    currency: CurrencyConfig;
 }
 
 const UNIT_OPTIONS = ["kg", "L", "pessoa-dia", "hora"];
@@ -34,12 +35,13 @@ export function AddItemModal({
     areaUnitLabel,
     onAdd,
     onClose,
+    currency,
 }: AddItemModalProps) {
     const [itemName, setItemName] = useState("");
     const [category, setCategory] = useState<CostCategory>("Insumos");
     const [unit, setUnit] = useState("kg");
     const [pricePerUnit, setPricePerUnit] = useState(0);
-    const [quantityPerHectare, setQuantityPerHectare] = useState(0);
+    const [quantityPerAreaUnit, setQuantityPerAreaUnit] = useState(0);
 
     const handleAdd = () => {
         if (!itemName.trim()) {
@@ -52,7 +54,7 @@ export function AddItemModal({
             name: itemName,
             costCategory: category,
             pricePerUnit,
-            quantityPerHectare,
+            quantityPerAreaUnit,
             unit,
         });
 
@@ -60,7 +62,7 @@ export function AddItemModal({
         setCategory("Insumos");
         setUnit("kg");
         setPricePerUnit(0);
-        setQuantityPerHectare(0);
+        setQuantityPerAreaUnit(0);
         onClose();
     };
 
@@ -132,7 +134,7 @@ export function AddItemModal({
                     label="Preço Unitário"
                     value={pricePerUnit}
                     onChange={setPricePerUnit}
-                    suffix="R$"
+                    suffix={currency.symbol}
                     min={0}
                     step={0.01}
                 />
@@ -140,8 +142,8 @@ export function AddItemModal({
                 {/* Quantidade */}
                 <NumericInput
                     label={`Quantidade por ${areaUnitLabel} (${unit})`}
-                    value={quantityPerHectare}
-                    onChange={setQuantityPerHectare}
+                    value={quantityPerAreaUnit}
+                    onChange={setQuantityPerAreaUnit}
                     min={0}
                     step={unit === "kg" ? 1 : 0.01}
                 />

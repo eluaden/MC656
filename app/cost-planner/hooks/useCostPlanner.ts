@@ -6,19 +6,27 @@ import {
   CostItem,
   GlobalParameters,
   CalculatedCosts,
-  Crop,
   SectionType,
   CostCategory,
   AreaUnit,
+  CurrencyConfig,
 } from "../types";
 
 const STORAGE_KEY = "costPlannerState";
 
+const DEFAULT_CURRENCY: CurrencyConfig = {
+  code: "BRL",
+  symbol: "R$",
+  locale: "pt-BR",
+  decimalPlaces: 2,
+};
+
 const DEFAULT_STATE: CostPlannerState = {
   globalParameters: {
-    crop: "Soja" as Crop,
+    crop: "Soja",
     area: 100,
     areaUnit: "hectares" as AreaUnit,
+    currency: DEFAULT_CURRENCY,
   },
   items: getDefaultItems(),
 };
@@ -31,8 +39,21 @@ export function useCostPlanner() {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
-        setState(JSON.parse(saved));
+        const parsedState = JSON.parse(saved);
+        // Mesclar com valores padrão para garantir que propriedades novas existam
+        const mergedState: CostPlannerState = {
+          globalParameters: {
+            ...DEFAULT_STATE.globalParameters,
+            ...parsedState.globalParameters,
+            // Garantir que currency tenha valores padrão se não existir
+            currency: parsedState.globalParameters?.currency || DEFAULT_CURRENCY,
+          },
+          items: parsedState.items || [],
+        };
+        setState(mergedState);
       } catch {
+        // Se houver erro ao parsear, usar DEFAULT_STATE
+        setState(DEFAULT_STATE);
       }
     }
     setIsLoaded(true);
@@ -48,7 +69,7 @@ export function useCostPlanner() {
 
   const calculateItemCost = useCallback(
     (item: CostItem): number => {
-      return item.pricePerUnit * item.quantityPerHectare * state.globalParameters.area;
+      return item.pricePerUnit * item.quantityPerAreaUnit * state.globalParameters.area;
     },
     [state.globalParameters.area]
   );
@@ -76,7 +97,7 @@ export function useCostPlanner() {
       totalCost += itemCost;
     });
 
-    const costPerHectare =
+    const costPerAreaUnit =
       state.globalParameters.area > 0
         ? totalCost / state.globalParameters.area
         : 0;
@@ -86,7 +107,7 @@ export function useCostPlanner() {
       sectionTotals,
       categoryTotals,
       totalCost,
-      costPerHectare,
+      costPerAreaUnit,
     };
   }, [state.items, state.globalParameters.area, calculateItemCost]);
 
@@ -163,10 +184,10 @@ export function useCostPlanner() {
           // Converter apenas as quantidades de INSUMOS
           newState.items = prev.items.map((item) => ({
             ...item,
-            quantityPerHectare:
+            quantityPerAreaUnit:
               item.costCategory === "Insumos"
-                ? truncate(item.quantityPerHectare * conversionFactor)
-                : item.quantityPerHectare,
+                ? truncate(item.quantityPerAreaUnit * conversionFactor)
+                : item.quantityPerAreaUnit,
           }));
         }
 
@@ -186,11 +207,12 @@ export function useCostPlanner() {
   const clearForm = useCallback(() => {
     const defaults = {
       globalParameters: {
-        crop: "Soja" as Crop,
+        crop: "Soja",
         area: 100,
         areaUnit: "hectares" as AreaUnit,
+        currency: DEFAULT_CURRENCY,
       },
-      items: getDefaultItems()
+      items: getDefaultItems(),
     };
     setState(defaults);
   }, []);
@@ -230,7 +252,7 @@ function getDefaultItems(): CostItem[] {
       name: "Calcário",
       costCategory: "Insumos",
       pricePerUnit: 150,
-      quantityPerHectare: 2000,
+      quantityPerAreaUnit: 2000,
       unit: "kg",
     },
     {
@@ -239,7 +261,7 @@ function getDefaultItems(): CostItem[] {
       name: "Gesso",
       costCategory: "Insumos",
       pricePerUnit: 120,
-      quantityPerHectare: 1000,
+      quantityPerAreaUnit: 1000,
       unit: "kg",
     },
     {
@@ -248,7 +270,7 @@ function getDefaultItems(): CostItem[] {
       name: "Sementes",
       costCategory: "Insumos",
       pricePerUnit: 400,
-      quantityPerHectare: 50,
+      quantityPerAreaUnit: 50,
       unit: "kg",
     },
     {
@@ -257,7 +279,7 @@ function getDefaultItems(): CostItem[] {
       name: "Herbicida Pré-plantio",
       costCategory: "Insumos",
       pricePerUnit: 80,
-      quantityPerHectare: 2,
+      quantityPerAreaUnit: 2,
       unit: "L",
     },
     {
@@ -266,7 +288,7 @@ function getDefaultItems(): CostItem[] {
       name: "Fertilizante NPK",
       costCategory: "Insumos",
       pricePerUnit: 3.5,
-      quantityPerHectare: 200,
+      quantityPerAreaUnit: 200,
       unit: "kg",
     },
     {
@@ -275,7 +297,7 @@ function getDefaultItems(): CostItem[] {
       name: "Fungicida",
       costCategory: "Insumos",
       pricePerUnit: 100,
-      quantityPerHectare: 1.5,
+      quantityPerAreaUnit: 1.5,
       unit: "L",
     },
     {
@@ -284,7 +306,7 @@ function getDefaultItems(): CostItem[] {
       name: "Máquina Colheitadeira",
       costCategory: "Mecanização",
       pricePerUnit: 200,
-      quantityPerHectare: 1,
+      quantityPerAreaUnit: 1,
       unit: "hora",
     },
     {
@@ -293,7 +315,7 @@ function getDefaultItems(): CostItem[] {
       name: "Mão de Obra Colheita",
       costCategory: "Mão de Obra",
       pricePerUnit: 50,
-      quantityPerHectare: 2,
+      quantityPerAreaUnit: 2,
       unit: "pessoa-dia",
     },
   ];

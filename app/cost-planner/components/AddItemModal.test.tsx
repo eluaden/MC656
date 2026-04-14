@@ -10,6 +10,12 @@ describe("AddItemModal", () => {
     areaUnitLabel: "Hectare",
     onAdd: jest.fn(),
     onClose: jest.fn(),
+    currency: {
+      code: "BRL" as const,
+      symbol: "R$",
+      locale: "pt-BR",
+      decimalPlaces: 2,
+    },
   };
 
   beforeEach(() => {

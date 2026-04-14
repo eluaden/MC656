@@ -23,11 +23,10 @@ describe("useCostPlanner", () => {
   describe("default state", () => {
     it("initializes with default global parameters", () => {
       const { result } = renderHook(() => useCostPlanner());
-      expect(result.current.state.globalParameters).toEqual({
-        crop: "Soja",
-        area: 100,
-        areaUnit: "hectares",
-      });
+      expect(result.current.state.globalParameters.crop).toBe("Soja");
+      expect(result.current.state.globalParameters.area).toBe(100);
+      expect(result.current.state.globalParameters.areaUnit).toBe("hectares");
+      expect(result.current.state.globalParameters.currency.code).toBe("BRL");
     });
 
     it("initializes with 8 default items", () => {
@@ -55,7 +54,7 @@ describe("useCostPlanner", () => {
           name: "Novo Insumo",
           costCategory: "Insumos",
           pricePerUnit: 50,
-          quantityPerHectare: 10,
+          quantityPerAreaUnit: 10,
           unit: "kg",
         });
       });
@@ -76,7 +75,7 @@ describe("useCostPlanner", () => {
           name: "Item A",
           costCategory: "Insumos",
           pricePerUnit: 10,
-          quantityPerHectare: 5,
+          quantityPerAreaUnit: 5,
           unit: "L",
         });
       });
@@ -87,7 +86,7 @@ describe("useCostPlanner", () => {
           name: "Item B",
           costCategory: "Insumos",
           pricePerUnit: 20,
-          quantityPerHectare: 3,
+          quantityPerAreaUnit: 3,
           unit: "L",
         });
       });
@@ -118,11 +117,11 @@ describe("useCostPlanner", () => {
       const firstItem = result.current.state.items[0];
 
       act(() => {
-        result.current.updateItem(firstItem.id, { quantityPerHectare: 5000 });
+        result.current.updateItem(firstItem.id, { quantityPerAreaUnit: 5000 });
       });
 
       const updated = result.current.state.items.find((i) => i.id === firstItem.id);
-      expect(updated!.quantityPerHectare).toBe(5000);
+      expect(updated!.quantityPerAreaUnit).toBe(5000);
     });
 
     it("does not affect other items", () => {
@@ -236,7 +235,7 @@ describe("useCostPlanner", () => {
   // ==================== calculateItemCost ====================
 
   describe("calculateItemCost", () => {
-    it("calculates cost as pricePerUnit × quantityPerHectare × area", () => {
+    it("calculates cost as pricePerUnit × quantityPerAreaUnit × area", () => {
       const { result } = renderHook(() => useCostPlanner());
 
       const testItem: CostItem = {
@@ -245,7 +244,7 @@ describe("useCostPlanner", () => {
         name: "Test",
         costCategory: "Insumos",
         pricePerUnit: 10,
-        quantityPerHectare: 5,
+        quantityPerAreaUnit: 5,
         unit: "kg",
       };
 
@@ -266,7 +265,7 @@ describe("useCostPlanner", () => {
         name: "Test",
         costCategory: "Insumos",
         pricePerUnit: 10,
-        quantityPerHectare: 5,
+        quantityPerAreaUnit: 5,
         unit: "kg",
       };
 
@@ -284,17 +283,17 @@ describe("useCostPlanner", () => {
 
       let expectedTotal = 0;
       state.items.forEach((item) => {
-        expectedTotal += item.pricePerUnit * item.quantityPerHectare * state.globalParameters.area;
+        expectedTotal += item.pricePerUnit * item.quantityPerAreaUnit * state.globalParameters.area;
       });
 
       expect(totals.totalCost).toBe(expectedTotal);
     });
 
-    it("computes costPerHectare as totalCost / area", () => {
+    it("computes costPerAreaUnit as totalCost / area", () => {
       const { result } = renderHook(() => useCostPlanner());
       const { totals } = result.current;
 
-      expect(totals.costPerHectare).toBe(totals.totalCost / 100);
+      expect(totals.costPerAreaUnit).toBe(totals.totalCost / 100);
     });
 
     it("computes section totals correctly", () => {
@@ -304,7 +303,7 @@ describe("useCostPlanner", () => {
       const preparoItems = state.items.filter((i) => i.section === "Preparo");
       let expectedPreparo = 0;
       preparoItems.forEach((item) => {
-        expectedPreparo += item.pricePerUnit * item.quantityPerHectare * state.globalParameters.area;
+        expectedPreparo += item.pricePerUnit * item.quantityPerAreaUnit * state.globalParameters.area;
       });
 
       expect(totals.sectionTotals["Preparo"]).toBe(expectedPreparo);
@@ -317,20 +316,20 @@ describe("useCostPlanner", () => {
       const insumosItems = state.items.filter((i) => i.costCategory === "Insumos");
       let expectedInsumos = 0;
       insumosItems.forEach((item) => {
-        expectedInsumos += item.pricePerUnit * item.quantityPerHectare * state.globalParameters.area;
+        expectedInsumos += item.pricePerUnit * item.quantityPerAreaUnit * state.globalParameters.area;
       });
 
       expect(totals.categoryTotals["Insumos"]).toBe(expectedInsumos);
     });
 
-    it("returns zero costPerHectare when area is zero", () => {
+    it("returns zero costPerAreaUnit when area is zero", () => {
       const { result } = renderHook(() => useCostPlanner());
 
       act(() => {
         result.current.updateGlobalParameters({ area: 0 });
       });
 
-      expect(result.current.totals.costPerHectare).toBe(0);
+      expect(result.current.totals.costPerAreaUnit).toBe(0);
     });
 
     it("returns zero totals when all items are deleted", () => {
@@ -342,7 +341,7 @@ describe("useCostPlanner", () => {
       });
 
       expect(result.current.totals.totalCost).toBe(0);
-      expect(result.current.totals.costPerHectare).toBe(0);
+      expect(result.current.totals.costPerAreaUnit).toBe(0);
     });
   });
 

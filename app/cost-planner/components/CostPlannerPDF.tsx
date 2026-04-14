@@ -168,7 +168,7 @@ export function CostPlannerPDF({ state, totals }: PDFExportProps) {
             </Text>
             <Text style={[styles.totalText, { marginTop: 10 }]}>
               Custo por {areaUnitLabel === "m²" ? "m²" : "Hectare"}: R${" "}
-              {totals.costPerHectare.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}
+              {totals.costPerAreaUnit.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}
             </Text>
           </View>
         </View>
@@ -190,7 +190,7 @@ export function CostPlannerPDF({ state, totals }: PDFExportProps) {
                 {items.map((item) => {
                   const itemCost =
                     item.pricePerUnit *
-                    item.quantityPerHectare *
+                    item.quantityPerAreaUnit *
                     state.globalParameters.area;
                   return (
                     <View key={item.id} style={styles.tableRow}>
@@ -201,7 +201,7 @@ export function CostPlannerPDF({ state, totals }: PDFExportProps) {
                         R$ {item.pricePerUnit.toFixed(2)}
                       </Text>
                       <Text style={styles.tableCell}>
-                        {item.quantityPerHectare}
+                        {item.quantityPerAreaUnit}
                       </Text>
                       <Text style={styles.tableCell}>
                         R$ {itemCost.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}

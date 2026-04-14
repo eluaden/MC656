@@ -1,8 +1,9 @@
 "use client";
 
 import React from "react";
-import { CostItem, SectionType, CostCategory } from "../types";
+import { CostItem, SectionType, CostCategory, CurrencyConfig } from "../types";
 import { NumericInput } from "./NumericInput";
+import { formatCurrency } from "../utils/formatCurrency";
 
 interface CostItemFormProps {
   item: CostItem;
@@ -10,6 +11,7 @@ interface CostItemFormProps {
   onDelete: (id: string) => void;
   area: number;
   areaUnitLabel: string;
+  currency: CurrencyConfig;
 }
 
 export function CostItemForm({
@@ -18,8 +20,9 @@ export function CostItemForm({
   onDelete,
   area,
   areaUnitLabel,
+  currency,
 }: CostItemFormProps) {
-  const itemCost = item.pricePerUnit * item.quantityPerHectare * area;
+  const itemCost = item.pricePerUnit * item.quantityPerAreaUnit * area;
 
   return (
     <div className="p-3 bg-gray-900 border border-gray-800 rounded-lg space-y-3">
@@ -43,15 +46,15 @@ export function CostItemForm({
           label="Preço Unitário"
           value={item.pricePerUnit}
           onChange={(value) => onUpdate(item.id, { pricePerUnit: value })}
-          suffix="R$"
+          suffix={currency.symbol}
           min={0}
           step={0.01}
         />
         <NumericInput
           label={`Qtd por ${areaUnitLabel} (${item.unit})`}
-          value={item.quantityPerHectare}
+          value={item.quantityPerAreaUnit}
           onChange={(value) =>
-            onUpdate(item.id, { quantityPerHectare: value })
+            onUpdate(item.id, { quantityPerAreaUnit: value })
           }
           min={0}
           step={0.01}
@@ -62,7 +65,7 @@ export function CostItemForm({
         <p className="text-xs text-gray-300">
           Custo Total:{" "}
           <span className="font-semibold text-emerald-300">
-            R$ {itemCost.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}
+            {formatCurrency(itemCost, currency)}
           </span>
         </p>
       </div>

@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import { SectionType, CostItem } from "../types";
+import { SectionType, CostItem, CurrencyConfig } from "../types";
 import { Accordion } from "./Accordion";
 import { CostItemForm } from "./CostItemForm";
-import { NumericInput } from "./NumericInput";
+import { formatCurrency } from "../utils/formatCurrency";
 
 interface SectionAccordionProps {
   sectionId: SectionType;
@@ -17,6 +17,7 @@ interface SectionAccordionProps {
   area: number;
   areaUnitLabel: string;
   sectionTotal: number;
+  currency: CurrencyConfig;
 }
 
 export function SectionAccordion({
@@ -30,12 +31,13 @@ export function SectionAccordion({
   area,
   areaUnitLabel,
   sectionTotal,
+  currency,
 }: SectionAccordionProps) {
   return (
     <Accordion
       id={sectionId}
       title={sectionLabel}
-      description={`${items.length} item(s) • R$ ${sectionTotal.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}`}
+      description={`${items.length} item(s) • ${formatCurrency(sectionTotal, currency)}`}
       isDefaultOpen={sectionId === "Preparo"}
     >
       <div className="space-y-4">
@@ -50,6 +52,7 @@ export function SectionAccordion({
               onDelete={onDeleteItem}
               area={area}
               areaUnitLabel={areaUnitLabel}
+              currency={currency}
             />
           ))}
         </div>

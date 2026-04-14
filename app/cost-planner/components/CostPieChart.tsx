@@ -9,10 +9,12 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { CalculatedCosts } from "../types";
+import { CalculatedCosts, CurrencyConfig } from "../types";
+import { formatCurrency } from "../utils/formatCurrency";
 
 interface CostPieChartProps {
   totals: CalculatedCosts;
+  currency: CurrencyConfig;
 }
 
 const COLORS = {
@@ -21,7 +23,7 @@ const COLORS = {
   "Mão de Obra": "#f59e0b",
 };
 
-export function CostPieChart({ totals }: CostPieChartProps) {
+export function CostPieChart({ totals, currency }: CostPieChartProps) {
   const data = Object.entries(totals.categoryTotals)
     .filter(([, value]) => value > 0)
     .map(([name, value]) => ({
@@ -41,7 +43,7 @@ export function CostPieChart({ totals }: CostPieChartProps) {
         <div className="bg-black/80 border border-white/20 rounded p-2">
           <p className="text-white text-xs font-semibold">{payload[0].name}</p>
           <p className="text-emerald-300 text-xs">
-            R$ {payload[0].value.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}
+            {formatCurrency(payload[0].value, currency)}
           </p>
         </div>
       );

@@ -6,6 +6,7 @@ import { GlobalParametersSection } from "./GlobalParametersSection";
 import { SectionAccordion } from "./SectionAccordion";
 import { CostPieChart } from "./CostPieChart";
 import { AddItemModal } from "./AddItemModal";
+import { formatCurrency } from "../utils/formatCurrency";
 import { pdf } from "@react-pdf/renderer";
 import { CostPlannerPDF } from "./CostPlannerPDF";
 import Link from "next/link";
@@ -138,6 +139,7 @@ export function CostPlannerLayout() {
                 area={state.globalParameters.area}
                 areaUnitLabel={areaUnitLabel}
                 sectionTotal={totals.sectionTotals[section.id]}
+                currency={state.globalParameters.currency}
               />
             ))}
           </div>
@@ -151,6 +153,7 @@ export function CostPlannerLayout() {
                 onExport={handleExportPDF}
                 isExporting={isExporting}
                 areaUnitLabel={areaUnitLabel}
+                currency={state.globalParameters.currency}
               />
 
               {/* Gráfico de Pizza */}
@@ -158,7 +161,7 @@ export function CostPlannerLayout() {
                 <h3 className="text-sm font-semibold text-white mb-4">
                   Custos por Categoria
                 </h3>
-                <CostPieChart totals={totals} />
+                <CostPieChart totals={totals} currency={state.globalParameters.currency} />
               </div>
             </div>
           </div>
@@ -172,6 +175,7 @@ export function CostPlannerLayout() {
         onAdd={handleAddItem}
         sectionId={addItemSection}
         areaUnitLabel={areaUnitLabel}
+        currency={state.globalParameters.currency}
       />
     </div>
   );
@@ -183,6 +187,7 @@ interface CostSummaryPanelWithExportProps {
   onExport: () => Promise<void>;
   isExporting: boolean;
   areaUnitLabel: string;
+  currency: any;
 }
 
 function CostSummaryPanelWithExport({
@@ -191,7 +196,9 @@ function CostSummaryPanelWithExport({
   onExport,
   isExporting,
   areaUnitLabel,
+  currency,
 }: CostSummaryPanelWithExportProps) {
+  
   return (
     <div className="flex flex-col h-full bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
       <div className="flex-1 p-6 space-y-6 overflow-y-auto">
@@ -200,7 +207,7 @@ function CostSummaryPanelWithExport({
         <div className="p-4 bg-gradient-to-br from-emerald-500/20 to-emerald-500/10 border border-emerald-500/30 rounded-xl">
           <p className="text-xs text-emerald-300 mb-2">CUSTO TOTAL ESTIMADO</p>
           <p className="text-3xl font-bold text-emerald-300">
-            R$ {totals.totalCost.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}
+            {formatCurrency(totals.totalCost, currency)}
           </p>
         </div>
 
@@ -208,7 +215,7 @@ function CostSummaryPanelWithExport({
         <div className="p-4 bg-gradient-to-br from-blue-500/20 to-blue-500/10 border border-blue-500/30 rounded-xl">
           <p className="text-xs text-blue-300 mb-2">CUSTO POR {areaUnitLabel.toUpperCase()}</p>
           <p className="text-2xl font-bold text-blue-300">
-            R$ {totals.costPerHectare.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}
+            {formatCurrency(totals.costPerAreaUnit, currency)}
           </p>
         </div>
 
@@ -222,7 +229,7 @@ function CostSummaryPanelWithExport({
               <div key={category} className="flex justify-between items-center">
                 <span className="text-sm text-gray-300">{category}</span>
                 <span className="font-semibold text-white">
-                  R$ {cost.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}
+                  {formatCurrency(cost, currency)}
                 </span>
               </div>
             ))}
