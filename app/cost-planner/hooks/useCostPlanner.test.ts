@@ -393,4 +393,155 @@ describe("useCostPlanner", () => {
       expect(colheitaItems).toHaveLength(0);
     });
   });
+
+  // ==================== Area Unit Conversion ====================
+
+  describe("area unit conversion", () => {
+    it("converts area from hectares to m² (×10000)", () => {
+      const { result } = renderHook(() => useCostPlanner());
+      expect(result.current.state.globalParameters.area).toBe(100);
+
+      act(() => {
+        result.current.updateGlobalParameters({ areaUnit: "m²" });
+      });
+
+      expect(result.current.state.globalParameters.area).toBe(1000000);
+      expect(result.current.state.globalParameters.areaUnit).toBe("m²");
+    });
+
+    it("converts area from m² to hectares (÷10000)", () => {
+      const { result } = renderHook(() => useCostPlanner());
+
+      act(() => {
+        result.current.updateGlobalParameters({ areaUnit: "m²" });
+      });
+
+      act(() => {
+        result.current.updateGlobalParameters({ areaUnit: "hectares" });
+      });
+
+      expect(result.current.state.globalParameters.area).toBe(100);
+      expect(result.current.state.globalParameters.areaUnit).toBe("hectares");
+    });
+
+    it("converts per_area item quantities when switching units", () => {
+      const { result } = renderHook(() => useCostPlanner());
+      const firstItem = result.current.state.items[0];
+      const originalQty = firstItem.quantityPerAreaUnit; // 2000 kg/ha
+
+      act(() => {
+        result.current.updateGlobalParameters({ areaUnit: "m²" });
+      });
+
+      const converted = result.current.state.items.find((i) => i.id === firstItem.id);
+      expect(converted!.quantityPerAreaUnit).toBe(originalQty / 10000); // 0.2 kg/m²
+    });
+
+    it("does NOT convert fixed quantity items when switching units", () => {
+      const { result } = renderHook(() => useCostPlanner());
+
+      act(() => {
+        result.current.addItem("Colheita", {
+          section: "Colheita",
+          name: "Trator",
+          costCategory: "Mecanização",
+          pricePerUnit: 50000,
+          quantityPerAreaUnit: 2,
+          quantityType: "fixed",
+          unit: "unidade",
+        });
+      });
+
+      const trator = result.current.state.items.find((i) => i.name === "Trator");
+      expect(trator!.quantityPerAreaUnit).toBe(2);
+
+      act(() => {
+        result.current.updateGlobalParameters({ areaUnit: "m²" });
+      });
+
+      const tratorAfter = result.current.state.items.find((i) => i.name === "Trator");
+      expect(tratorAfter!.quantityPerAreaUnit).toBe(2); // unchanged
+    });
+
+    it("preserves total cost after unit conversion (round-trip)", () => {
+      const { result } = renderHook(() => useCostPlanner());
+      const totalBefore = result.current.totals.totalCost;
+
+      act(() => {
+        result.current.updateGlobalParameters({ areaUnit: "m²" });
+      });
+
+      const totalAfter = result.current.totals.totalCost;
+      expect(totalAfter).toBeCloseTo(totalBefore, 0);
+    });
+  });
+
+  // ==================== localStorage Migration ====================
+
+  describe("localStorage migration", () => {
+    it("migrates old quantityPerHectare to quantityPerAreaUnit", () => {
+      const oldState = {
+        globalParameters: { crop: "Soja", area: 50, areaUnit: "hectares" },
+        items: [
+          {
+            id: "old-1",
+            section: "Preparo",
+            name: "Old Item",
+            costCategory: "Insumos",
+            pricePerUnit: 100,
+            quantityPerHectare: 500,
+            unit: "kg",
+          },
+        ],
+      };
+      localStorageMock.setItem("costPlannerState", JSON.stringify(oldState));
+
+      const { result } = renderHook(() => useCostPlanner());
+
+      // Wait for useEffect to load
+      act(() => {});
+
+      const item = result.current.state.items.find((i) => i.id === "old-1");
+      expect(item).toBeDefined();
+      expect(item!.quantityPerAreaUnit).toBe(500);
+    });
+
+    it("defaults quantityType to per_area for old items", () => {
+      const oldState = {
+        globalParameters: { crop: "Café", area: 10, areaUnit: "hectares" },
+        items: [
+          {
+            id: "old-2",
+            section: "Manejo",
+            name: "Old Fungicida",
+            costCategory: "Insumos",
+            pricePerUnit: 80,
+            quantityPerAreaUnit: 3,
+            unit: "L",
+          },
+        ],
+      };
+      localStorageMock.setItem("costPlannerState", JSON.stringify(oldState));
+
+      const { result } = renderHook(() => useCostPlanner());
+      act(() => {});
+
+      const item = result.current.state.items.find((i) => i.id === "old-2");
+      expect(item!.quantityType).toBe("per_area");
+    });
+
+    it("defaults currency to BRL when missing from saved state", () => {
+      const oldState = {
+        globalParameters: { crop: "Soja", area: 100, areaUnit: "hectares" },
+        items: [],
+      };
+      localStorageMock.setItem("costPlannerState", JSON.stringify(oldState));
+
+      const { result } = renderHook(() => useCostPlanner());
+      act(() => {});
+
+      expect(result.current.state.globalParameters.currency.code).toBe("BRL");
+      expect(result.current.state.globalParameters.currency.symbol).toBe("R$");
+    });
+  });
 });
