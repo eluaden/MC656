@@ -26,11 +26,23 @@ export function NumericInput({
   suffix,
 }: NumericInputProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const numValue = parseFloat(e.target.value);
+
+    let inputValue = e.target.value;
+
+    if (inputValue === "") {
+      onChange(0);
+      return;
+    }
+
+    if (inputValue.startsWith("0") && inputValue.length > 1 && !inputValue.includes(".")) {
+      inputValue = inputValue.replace(/^0+/, "");
+      e.target.value = inputValue;
+    }
+
+    const numValue = parseFloat(inputValue);
+    
     if (!isNaN(numValue)) {
       onChange(numValue);
-    } else if (e.target.value === "") {
-      onChange(0);
     }
   };
 
@@ -49,11 +61,10 @@ export function NumericInput({
           min={min}
           max={max}
           step={step}
-          className={`w-full px-3 py-2 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition ${
-            error
+          className={`w-full px-3 py-2 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition ${error
               ? "bg-red-950/20 border-red-500 focus:ring-red-500"
               : "bg-gray-900 border-gray-800 focus:ring-emerald-500"
-          }`}
+            }`}
         />
         {suffix && (
           <span className="absolute right-3 top-2 text-sm text-gray-400">
