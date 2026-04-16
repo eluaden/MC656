@@ -9,6 +9,7 @@ import {
   StyleSheet,
 } from "@react-pdf/renderer";
 import { CostPlannerState, CalculatedCosts } from "../types";
+import { formatCurrency } from "../utils/formatCurrency";
 
 interface PDFExportProps {
   state: CostPlannerState;
@@ -155,7 +156,7 @@ export function CostPlannerPDF({ state, totals }: PDFExportProps) {
               <View key={category} style={styles.categoryRow}>
                 <Text style={styles.categoryLabel}>{category}</Text>
                 <Text style={styles.categoryValue}>
-                  R$ {cost.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}
+                  {formatCurrency(cost, state.globalParameters.currency)}
                 </Text>
               </View>
             ))}
@@ -163,11 +164,11 @@ export function CostPlannerPDF({ state, totals }: PDFExportProps) {
           <View style={styles.totalBox}>
             <Text style={styles.totalText}>Custo Total Estimado</Text>
             <Text style={styles.totalValue}>
-              R$ {totals.totalCost.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}
+              {formatCurrency(totals.totalCost, state.globalParameters.currency)}
             </Text>
             <Text style={[styles.totalText, { marginTop: 10 }]}>
-              Custo por {areaUnitLabel === "m²" ? "m²" : "Hectare"}: R${" "}
-              {totals.costPerAreaUnit.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}
+              Custo por {areaUnitLabel === "m²" ? "m²" : "Hectare"}:{" "}
+              {formatCurrency(totals.costPerAreaUnit, state.globalParameters.currency)}
             </Text>
           </View>
         </View>
@@ -187,23 +188,24 @@ export function CostPlannerPDF({ state, totals }: PDFExportProps) {
                   <Text style={styles.tableCell}>Total</Text>
                 </View>
                 {items.map((item) => {
-                  const itemCost =
-                    item.pricePerUnit *
-                    item.quantityPerAreaUnit *
-                    state.globalParameters.area;
+                  const isFixed = item.quantityType === "fixed";
+                  const quantity = item.quantityPerAreaUnit;
+                  const itemCost = isFixed
+                    ? item.pricePerUnit * quantity
+                    : item.pricePerUnit * quantity * state.globalParameters.area;
                   return (
                     <View key={item.id} style={styles.tableRow}>
                       <Text style={[styles.tableCell, { flex: 2 }]}>
                         {item.name}
                       </Text>
                       <Text style={styles.tableCell}>
-                        R$ {item.pricePerUnit.toFixed(2)}
+                        {formatCurrency(item.pricePerUnit, state.globalParameters.currency)}
                       </Text>
                       <Text style={styles.tableCell}>
-                        {item.quantityPerAreaUnit}
+                        {quantity} {isFixed && item.unit ? item.unit : ""}
                       </Text>
                       <Text style={styles.tableCell}>
-                        R$ {itemCost.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}
+                        {formatCurrency(itemCost, state.globalParameters.currency)}
                       </Text>
                     </View>
                   );
