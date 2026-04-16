@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { SectionType, CostItem, CurrencyConfig } from "../types";
 import { Accordion } from "./Accordion";
 import { CostItemForm } from "./CostItemForm";

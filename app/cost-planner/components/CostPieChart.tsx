@@ -23,6 +23,28 @@ const COLORS = {
   "Mão de Obra": "#f59e0b",
 };
 
+const CustomTooltip = ({
+  active,
+  payload,
+  currency,
+}: {
+  active?: boolean;
+  payload?: Array<{ name: string; value: number }>;
+  currency: CurrencyConfig;
+}) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-black/80 border border-white/20 rounded p-2">
+        <p className="text-white text-xs font-semibold">{payload[0].name}</p>
+        <p className="text-emerald-300 text-xs">
+          {formatCurrency(payload[0].value, currency)}
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
+
 export function CostPieChart({ totals, currency }: CostPieChartProps) {
   const data = Object.entries(totals.categoryTotals)
     .filter(([, value]) => value > 0)
@@ -31,25 +53,7 @@ export function CostPieChart({ totals, currency }: CostPieChartProps) {
       value: parseFloat(value.toFixed(2)),
     }));
 
-  const CustomTooltip = ({
-    active,
-    payload,
-  }: {
-    active?: boolean;
-    payload?: Array<{ name: string; value: number }>;
-  }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-black/80 border border-white/20 rounded p-2">
-          <p className="text-white text-xs font-semibold">{payload[0].name}</p>
-          <p className="text-emerald-300 text-xs">
-            {formatCurrency(payload[0].value, currency)}
-          </p>
-        </div>
-      );
-    }
-    return null;
-  };
+
 
   if (data.length === 0) {
     return (
@@ -77,7 +81,7 @@ export function CostPieChart({ totals, currency }: CostPieChartProps) {
             />
           ))}
         </Pie>
-        <Tooltip content={<CustomTooltip />} />
+        <Tooltip content={<CustomTooltip currency={currency} />} />
         <Legend 
           wrapperStyle={{ paddingTop: "30px" }} 
           verticalAlign="bottom" 

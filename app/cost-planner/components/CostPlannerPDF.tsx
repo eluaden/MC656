@@ -7,7 +7,6 @@ import {
   Text,
   View,
   StyleSheet,
-  Image,
 } from "@react-pdf/renderer";
 import { CostPlannerState, CalculatedCosts } from "../types";
 

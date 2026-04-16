@@ -1,6 +1,6 @@
 import { renderHook, act } from "@testing-library/react";
 import { useCostPlanner } from "./useCostPlanner";
-import { CostItem, SectionType } from "../types";
+import { CostItem } from "../types";
 
 const localStorageMock = (() => {
   let store: Record<string, string> = {};

@@ -31,35 +31,35 @@ const DEFAULT_STATE: CostPlannerState = {
   items: getDefaultItems(),
 };
 
+function getInitialState(): CostPlannerState {
+  if (typeof window === "undefined") return DEFAULT_STATE;
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (!saved) return DEFAULT_STATE;
+  try {
+    const parsedState = JSON.parse(saved);
+    return {
+      globalParameters: {
+        ...DEFAULT_STATE.globalParameters,
+        ...parsedState.globalParameters,
+        currency: parsedState.globalParameters?.currency || DEFAULT_CURRENCY,
+      },
+      items: (parsedState.items || []).map((item: Record<string, unknown>) => ({
+        ...item,
+        quantityPerAreaUnit: (item.quantityPerAreaUnit as number) ?? (item.quantityPerHectare as number) ?? 0,
+        quantityType: (item.quantityType as string) ?? "per_area",
+      })),
+    };
+  } catch {
+    return DEFAULT_STATE;
+  }
+}
+
 export function useCostPlanner() {
-  const [state, setState] = useState<CostPlannerState>(DEFAULT_STATE);
+  const [state, setState] = useState<CostPlannerState>(getInitialState);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        const parsedState = JSON.parse(saved);
-        // Mesclar com valores padrão para garantir que propriedades novas existam
-        const mergedState: CostPlannerState = {
-          globalParameters: {
-            ...DEFAULT_STATE.globalParameters,
-            ...parsedState.globalParameters,
-            // Garantir que currency tenha valores padrão se não existir
-            currency: parsedState.globalParameters?.currency || DEFAULT_CURRENCY,
-          },
-          items: (parsedState.items || []).map((item: any) => ({
-            ...item,
-            quantityPerAreaUnit: item.quantityPerAreaUnit ?? item.quantityPerHectare ?? 0,
-            quantityType: item.quantityType ?? "per_area",
-          })),
-        };
-        setState(mergedState);
-      } catch {
-        // Se houver erro ao parsear, usar DEFAULT_STATE
-        setState(DEFAULT_STATE);
-      }
-    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoaded(true);
   }, []);
 
@@ -155,7 +155,7 @@ export function useCostPlanner() {
   const updateGlobalParameters = useCallback(
     (updates: Partial<GlobalParameters>) => {
       setState((prev) => {
-        let newState = {
+        const newState = {
           ...prev,
           globalParameters: {
             ...prev.globalParameters,
@@ -252,6 +252,7 @@ export function useCostPlanner() {
     updateGlobalParameters,
     saveProject,
     clearForm,
+    isLoaded,
   };
 }
 

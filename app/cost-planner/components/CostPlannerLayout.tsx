@@ -9,6 +9,7 @@ import { AddItemModal } from "./AddItemModal";
 import { formatCurrency } from "../utils/formatCurrency";
 import { pdf } from "@react-pdf/renderer";
 import { CostPlannerPDF } from "./CostPlannerPDF";
+import { CostItem, CalculatedCosts, CurrencyConfig } from "../types";
 import Link from "next/link";
 
 const SECTION_CONFIG = [
@@ -44,8 +45,8 @@ export function CostPlannerLayout() {
     updateItem,
     deleteItem,
     getItemsBySection,
-    saveProject,
     clearForm,
+    isLoaded,
   } = useCostPlanner();
 
   const areaUnitLabel = state.globalParameters.areaUnit === "m²" ? "m²" : "Hectare";
@@ -59,7 +60,7 @@ export function CostPlannerLayout() {
     setAddItemModalOpen(true);
   };
 
-  const handleAddItem = (itemData: any) => {
+  const handleAddItem = (itemData: Omit<CostItem, "id">) => {
     addItem(addItemSection, itemData);
   };
 
@@ -71,11 +72,6 @@ export function CostPlannerLayout() {
     ) {
       clearForm();
     }
-  };
-
-  const handleSaveProject = () => {
-    saveProject();
-    alert("Projeto salvo com sucesso!");
   };
 
   const handleExportPDF = async () => {
@@ -96,6 +92,17 @@ export function CostPlannerLayout() {
       setIsExporting(false);
     }
   };
+
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="animate-pulse flex flex-col items-center">
+          <div className="h-8 w-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+          <p className="text-emerald-500 font-medium">Carregando planejador...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-black relative">
@@ -182,12 +189,12 @@ export function CostPlannerLayout() {
 }
 
 interface CostSummaryPanelWithExportProps {
-  totals: any;
+  totals: CalculatedCosts;
   onClear: () => void;
   onExport: () => Promise<void>;
   isExporting: boolean;
   areaUnitLabel: string;
-  currency: any;
+  currency: CurrencyConfig;
 }
 
 function CostSummaryPanelWithExport({
@@ -225,7 +232,7 @@ function CostSummaryPanelWithExport({
             CUSTOS POR CATEGORIA
           </p>
           <div className="space-y-2">
-            {Object.entries(totals.categoryTotals).map(([category, cost]: [string, any]) => (
+            {Object.entries(totals.categoryTotals).map(([category, cost]: [string, number]) => (
               <div key={category} className="flex justify-between items-center">
                 <span className="text-sm text-gray-300">{category}</span>
                 <span className="font-semibold text-white">

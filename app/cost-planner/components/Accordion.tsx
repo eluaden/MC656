@@ -11,7 +11,6 @@ interface AccordionProps {
 }
 
 export function Accordion({
-  id,
   title,
   description,
   isDefaultOpen = true,

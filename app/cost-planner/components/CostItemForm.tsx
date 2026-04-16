@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { CostItem, SectionType, CostCategory, CurrencyConfig } from "../types";
+import { CostItem, CurrencyConfig } from "../types";
 import { NumericInput } from "./NumericInput";
 import { formatCurrency } from "../utils/formatCurrency";
 

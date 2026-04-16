@@ -49,7 +49,7 @@ export async function GET(req: Request) {
   }
 }
 
-function buildClimateSummary(current: any) {
+function buildClimateSummary(current: { temperature_2m: number; relative_humidity_2m: number; wind_speed_10m: number; weather_code: number }) {
   if (!current) return "Sem dados climáticos disponíveis.";
 
   const temp = current.temperature_2m;
