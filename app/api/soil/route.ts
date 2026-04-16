@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { hasUsefulSoilData, buildSoilSummary } from "./soil-utils";
-import type { SoilResponse } from "./soil-utils";
 
 async function fetchSoil(lat: number, lng: number) {
   const params = new URLSearchParams();
