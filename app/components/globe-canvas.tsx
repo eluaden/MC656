@@ -71,16 +71,17 @@ export default function GlobeCanvas() {
   return (
     <div
       ref={containerRef}
-      className="h-screen w-screen overflow-hidden bg-linear-to-b from-sky-100 via-cyan-50 to-emerald-50"
+      className="starry-bg relative h-screen w-screen overflow-hidden"
     >
+      <div className="relative z-[1]">
       <Globe
         ref={globeRef}
         width={Math.max(globeSize.width, 1)}
         height={Math.max(globeSize.height, 1)}
         backgroundColor="rgba(0,0,0,0)"
         globeImageUrl="/globe_textures/8k_earth_daymap.jpg"
-        atmosphereAltitude={0.5}
-        atmosphereColor="#93c5fd"
+        atmosphereAltitude={0.25}
+        atmosphereColor="lightskyblue"
         // show a single pin for the selected region
         htmlElementsData={selectedMarker}
         htmlLat="lat"
@@ -205,10 +206,11 @@ export default function GlobeCanvas() {
           );
         }}
       />
+      </div>
       {isLoadingSoil && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/30 backdrop-blur-sm">
-          <div className="rounded-2xl bg-white/90 px-6 py-4 shadow-xl">
-            <p className="text-sm font-semibold text-slate-700 animate-pulse">
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="rounded-2xl bg-gray-900/90 border border-gray-700/50 px-6 py-4 shadow-xl">
+            <p className="text-sm font-semibold text-emerald-400 animate-pulse">
               Carregando informações do solo...
             </p>
           </div>
