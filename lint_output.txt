@@ -1,0 +1,32 @@
+
+> my-app@0.1.0 lint
+> eslint
+
+
+/Users/lalic/Documents/Unicamp/mc656/MC656/app/cost-planner/components/Accordion.tsx
+  14:7  warning  '_id' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/lalic/Documents/Unicamp/mc656/MC656/app/cost-planner/components/CostPlannerLayout.tsx
+  48:5  warning  'saveProject' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/lalic/Documents/Unicamp/mc656/MC656/app/cost-planner/hooks/useCostPlanner.ts
+  51:55  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             @typescript-eslint/no-explicit-any
+  57:9   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/lalic/Documents/Unicamp/mc656/MC656/app/cost-planner/hooks/useCostPlanner.ts:57:9
+  55 |           })),
+  56 |         };
+> 57 |         setState(mergedState);
+     |         ^^^^^^^^ Avoid calling setState() directly within an effect
+  58 |       } catch {
+  59 |         // Se houver erro ao parsear, usar DEFAULT_STATE
+  60 |         setState(DEFAULT_STATE);  react-hooks/set-state-in-effect
+
+✖ 4 problems (2 errors, 2 warnings)
+
