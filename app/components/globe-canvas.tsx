@@ -8,6 +8,7 @@ import {
   type ForwardRefExoticComponent,
   type RefAttributes,
 } from "react";
+import * as THREE from "three";
 import type { GlobeMethods, GlobeProps } from "react-globe.gl";
 
 const Globe = dynamic(() => import("react-globe.gl"), {
@@ -19,6 +20,21 @@ export default function GlobeCanvas() {
   const globeRef = useRef<GlobeMethods | null>(null);
   const [globeSize, setGlobeSize] = useState({ width: 0, height: 0 });
   const [isLoadingSoil, setIsLoadingSoil] = useState(false);
+  const globeMaterialRef = useRef<THREE.MeshPhongMaterial | null>(null);
+
+  if (!globeMaterialRef.current && typeof window !== "undefined") {
+    const material = new THREE.MeshPhongMaterial();
+    material.bumpScale = 4;
+    new THREE.TextureLoader().load(
+      "/globe_textures/earth-water.png",
+      (texture) => {
+        material.specularMap = texture;
+        material.specular = new THREE.Color(0x333333);
+        material.shininess = 8;
+      }
+    );
+    globeMaterialRef.current = material;
+  }
   const [selectedRegion, setSelectedRegion] = useState<{
     lat: number;
     lng: number;
@@ -53,21 +69,6 @@ export default function GlobeCanvas() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!globeRef.current) {
-      return;
-    }
-
-    const controls = globeRef.current.controls();
-    controls.enablePan = false;
-    controls.minDistance = 150;
-    controls.maxDistance = 360;
-    controls.autoRotate = true;
-    controls.autoRotateSpeed = 0.35;
-
-    globeRef.current.pointOfView({ lat: 12, lng: -25, altitude: 2.1 }, 0);
-  }, []);
-
   return (
     <div
       ref={containerRef}
@@ -79,9 +80,11 @@ export default function GlobeCanvas() {
         width={Math.max(globeSize.width, 1)}
         height={Math.max(globeSize.height, 1)}
         backgroundColor="rgba(0,0,0,0)"
-        globeImageUrl="/globe_textures/8k_earth_daymap.jpg"
-        atmosphereAltitude={0.25}
-        atmosphereColor="lightskyblue"
+        globeImageUrl="/globe_textures/earth-21k.jpg"
+        bumpImageUrl="/globe_textures/earth-topology.png"
+        globeMaterial={globeMaterialRef.current ?? undefined}
+        atmosphereAltitude={0.15}
+        atmosphereColor="#4da6ff"
         // show a single pin for the selected region
         htmlElementsData={selectedMarker}
         htmlLat="lat"
@@ -94,16 +97,16 @@ export default function GlobeCanvas() {
                 width:18px;
                 height:18px;
                 border-radius:9999px;
-                background:#c52227;
+                background:#10b981;
                 border:3px solid white;
-                box-shadow:0 4px 14px rgba(0,0,0,0.18);
+                box-shadow:0 0 10px rgba(16,185,129,0.5), 0 4px 14px rgba(0,0,0,0.18);
               "></div>
               <div style="
-                width:4px;
-                height:16px;
-                background:#c52227;
+                width:3px;
+                height:14px;
+                background:#10b981;
                 border-radius:9999px;
-                margin-top:-2px;
+                margin-top:0px;
               "></div>
             </div>
           `;
@@ -200,8 +203,15 @@ export default function GlobeCanvas() {
           controls.autoRotate = false;
           controls.autoRotateSpeed = 0.35;
 
+          const directionalLight = globeRef.current
+            ?.lights()
+            .find((obj3d: THREE.Object3D) => obj3d.type === "DirectionalLight") as THREE.DirectionalLight | undefined;
+          if (directionalLight) {
+            directionalLight.position.set(1, 1, 1);
+          }
+
           globeRef.current?.pointOfView(
-            { lat: 12, lng: -25, altitude: 2.1 },
+            { lat: 12, lng: -25, altitude: 1.5 },
             0,
           );
         }}
