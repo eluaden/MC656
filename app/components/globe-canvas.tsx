@@ -10,6 +10,7 @@ import {
 } from "react";
 import * as THREE from "three";
 import type { GlobeMethods, GlobeProps } from "react-globe.gl";
+import type { CropRecommendation } from "../api/crop/crop-utils";
 
 const Globe = dynamic(() => import("react-globe.gl"), {
   ssr: false,
@@ -41,7 +42,8 @@ export default function GlobeCanvas() {
     name: string;
     climate: string;
     soil: string;
-    crop: string;
+    crops: CropRecommendation[];
+    cropMessage: string | null;
   } | null>(null);
 
   // stores the pin data for the currently selected region
@@ -128,7 +130,8 @@ export default function GlobeCanvas() {
               name: "Região selecionada",
               climate: "Carregando...",
               soil: "Carregando informações do solo...",
-              crop: "Calculando...",
+              crops: [],
+              cropMessage: "Calculando...",
             });
 
             setSelectedMarker([
@@ -144,16 +147,22 @@ export default function GlobeCanvas() {
             const roundedLat = Number(lat.toFixed(3));
             const roundedLng = Number(lng.toFixed(3));
 
-            const [soilResponse, weatherResponse, locationResponse] =
-              await Promise.all([
-                fetch(`/api/soil?lat=${roundedLat}&lng=${roundedLng}`),
-                fetch(`/api/weather?lat=${roundedLat}&lng=${roundedLng}`),
-                fetch(`/api/location?lat=${roundedLat}&lng=${roundedLng}`),
-              ]);
+            const [
+              soilResponse,
+              weatherResponse,
+              locationResponse,
+              cropResponse,
+            ] = await Promise.all([
+              fetch(`/api/soil?lat=${roundedLat}&lng=${roundedLng}`),
+              fetch(`/api/weather?lat=${roundedLat}&lng=${roundedLng}`),
+              fetch(`/api/location?lat=${roundedLat}&lng=${roundedLng}`),
+              fetch(`/api/crop?lat=${roundedLat}&lng=${roundedLng}`),
+            ]);
 
             const soilData = await soilResponse.json();
             const weatherData = await weatherResponse.json();
             const locationData = await locationResponse.json();
+            const cropData = await cropResponse.json();
 
             const locationName =
               locationData.locationLabel ??
@@ -178,7 +187,10 @@ export default function GlobeCanvas() {
               soil: soilData.hasData
                 ? soilData.soilSummary
                 : "Sem dados de solo nesse ponto exato. Tente clicar em uma área rural próxima.",
-              crop: "Sugestão futura baseada em solo + clima",
+              crops: cropData.recommendations ?? [],
+              cropMessage: cropData.hasData
+                ? cropData.textureLabel ?? null
+                : "Sem dados de solo nesse ponto — adequação 0%. Tente uma área rural próxima.",
             });
           } catch {
             setSelectedRegion({
@@ -187,7 +199,8 @@ export default function GlobeCanvas() {
               name: "Região selecionada",
               climate: "Clima ainda não integrado",
               soil: "Erro ao consultar o SoilGrids",
-              crop: "Sugestão indisponível",
+              crops: [],
+              cropMessage: "Sugestão indisponível",
             });
           } finally {
             setIsLoadingSoil(false);
@@ -289,9 +302,48 @@ export default function GlobeCanvas() {
                   <div className="h-3 w-3 rounded-full border-2 border-emerald-400 border-t-transparent animate-spin"></div>
                   <p className="text-sm text-gray-400">Buscando dados...</p>
                 </div>
+              ) : selectedRegion.crops.length > 0 ? (
+                <div className="space-y-2">
+                  {selectedRegion.cropMessage && (
+                    <p className="text-[11px] text-gray-500">{selectedRegion.cropMessage}</p>
+                  )}
+                  {selectedRegion.crops.map((crop) => (
+                    <details
+                      key={crop.id}
+                      className="group rounded-lg border border-white/[0.06] bg-white/[0.02] px-2.5 py-2"
+                    >
+                      <summary className="flex cursor-pointer items-center justify-between gap-2 list-none">
+                        <span className="flex items-center gap-2 min-w-0">
+                          <span className="text-base leading-none">{crop.emoji}</span>
+                          <span className="text-sm font-medium text-gray-200 truncate">{crop.name}</span>
+                        </span>
+                        <span
+                          className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                            crop.matchLabel === "Alta"
+                              ? "bg-emerald-500/15 text-emerald-400"
+                              : crop.matchLabel === "Média"
+                              ? "bg-amber-500/15 text-amber-400"
+                              : "bg-gray-500/15 text-gray-400"
+                          }`}
+                        >
+                          {crop.matchLabel} · {crop.score}%
+                        </span>
+                      </summary>
+                      <div className="mt-1.5 space-y-1">
+                        <p className="text-xs text-gray-300 leading-relaxed">{crop.description}</p>
+                        <p className="text-[11px] text-gray-500 leading-relaxed">{crop.tips}</p>
+                      </div>
+                    </details>
+                  ))}
+                  <p className="pt-1 text-[10px] leading-relaxed text-gray-600">
+                    Adequação estimada pelo modelo FAO Ecocrop (temperatura + pH).
+                    Indicativo — não substitui análise agronômica.
+                  </p>
+                </div>
               ) : (
                 <p className="text-sm text-gray-300 leading-relaxed">
-                  Integração em breve — sugestões baseadas em solo e clima.
+                  {selectedRegion.cropMessage ??
+                    "Sem dados suficientes para recomendar culturas neste ponto."}
                 </p>
               )}
             </div>
