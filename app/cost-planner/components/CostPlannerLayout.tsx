@@ -10,7 +10,7 @@ import { formatCurrency } from "../utils/formatCurrency";
 import { pdf } from "@react-pdf/renderer";
 import { CostPlannerPDF } from "./CostPlannerPDF";
 import { CostItem, CalculatedCosts, CurrencyConfig } from "../types";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const SECTION_CONFIG = [
   {
@@ -37,6 +37,18 @@ const SECTION_CONFIG = [
 ];
 
 export function CostPlannerLayout() {
+  const router = useRouter();
+
+  // Returns to wherever the user came from (globe or home menu); falls back to
+  // the home menu if there's no in-app history (e.g. opened directly).
+  const handleBack = () => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+    } else {
+      router.push("/");
+    }
+  };
+
   const {
     state,
     totals,
@@ -116,12 +128,13 @@ export function CostPlannerLayout() {
             </h1>
             <p className="text-gray-300">AgroGlobe - Gestão de Custos Agrícolas</p>
           </div>
-          <Link
-            href="/"
+          <button
+            type="button"
+            onClick={handleBack}
             className="px-4 py-2 bg-gray-900 border border-gray-800 text-gray-300 hover:bg-gray-800 hover:text-white rounded-lg transition"
           >
             Voltar
-          </Link>
+          </button>
         </div>
 
         {/* Grid 2 colunas */}
