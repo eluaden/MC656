@@ -62,6 +62,7 @@ export default function GlobeCanvas() {
     countryCode: string | null;
     climate: string;
     soil: string;
+    soilTexture: string | null;
     crops: CropRecommendation[];
     cropMessage: string | null;
   } | null>(null);
@@ -69,11 +70,17 @@ export default function GlobeCanvas() {
   // controls the "which crop?" picker shown before going to the planner
   const [cropPickerOpen, setCropPickerOpen] = useState(false);
 
-  // navigates to the planner pre-filling the chosen crop and the region's currency
-  const goToPlanner = (crop?: string) => {
+  // navigates to the planner pre-filling the chosen crop, the region's currency,
+  // and procedence context (region name, soil, crop suitability) for the badge
+  const goToPlanner = (crop?: CropRecommendation) => {
     const params = new URLSearchParams();
-    if (crop) params.set("crop", crop);
+    if (crop) {
+      params.set("crop", crop.name);
+      params.set("match", String(crop.score));
+    }
     params.set("currency", currencyForCountry(selectedRegion?.countryCode ?? null));
+    if (selectedRegion?.name) params.set("region", selectedRegion.name);
+    if (selectedRegion?.soilTexture) params.set("soil", selectedRegion.soilTexture);
     router.push(`/cost-planner?${params.toString()}`);
   };
 
@@ -130,7 +137,7 @@ export default function GlobeCanvas() {
                   selectedRegion.crops.map((crop) => (
                     <button
                       key={crop.id}
-                      onClick={() => goToPlanner(crop.name)}
+                      onClick={() => goToPlanner(crop)}
                       className="flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left transition hover:bg-white/10"
                     >
                       <span className="flex min-w-0 items-center gap-2">
@@ -229,6 +236,7 @@ export default function GlobeCanvas() {
               countryCode: null,
               climate: "Carregando...",
               soil: "Carregando informações do solo...",
+              soilTexture: null,
               crops: [],
               cropMessage: "Calculando...",
             });
@@ -287,6 +295,9 @@ export default function GlobeCanvas() {
               soil: soilData.hasData
                 ? soilData.soilSummary
                 : "Sem dados de solo nesse ponto exato. Tente clicar em uma área rural próxima.",
+              soilTexture: cropData.hasData
+                ? (cropData.textureLabel?.replace(/\s*\(.*\)$/, "") ?? null)
+                : null,
               crops: cropData.recommendations ?? [],
               cropMessage: cropData.hasData
                 ? cropData.textureLabel ?? null
@@ -300,6 +311,7 @@ export default function GlobeCanvas() {
               countryCode: null,
               climate: "Clima ainda não integrado",
               soil: "Erro ao consultar o SoilGrids",
+              soilTexture: null,
               crops: [],
               cropMessage: "Sugestão indisponível",
             });
