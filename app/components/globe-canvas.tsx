@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import {
   useEffect,
   useRef,
@@ -76,6 +77,26 @@ export default function GlobeCanvas() {
       ref={containerRef}
       className="starry-bg relative h-screen w-screen overflow-hidden"
     >
+      {/* Back button — returns to the home menu */}
+      <Link
+        href="/"
+        className="absolute left-5 top-5 z-30 flex h-9 items-center gap-2 rounded-xl border border-white/[0.08] bg-black/60 px-3.5 text-sm font-medium text-gray-300 shadow-2xl shadow-black/40 backdrop-blur-xl transition hover:bg-white/10 hover:text-white"
+      >
+        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+        Voltar
+      </Link>
+
+      {/* "Ir para planejador" — only shown once a region is selected */}
+      {selectedRegion && (
+        <Link
+          href="/cost-planner"
+          className="panel-slide-in absolute right-5 top-1/2 z-30 flex h-11 -translate-y-1/2 items-center gap-2 rounded-xl border border-emerald-400/30 bg-emerald-600/90 px-5 text-sm font-semibold text-white shadow-2xl shadow-emerald-900/40 backdrop-blur-xl transition hover:bg-emerald-500 hover:shadow-emerald-900/50"
+        >
+          Ir para planejador
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+        </Link>
+      )}
+
       <div className={`relative z-[1] transition-transform duration-700 ease-out ${selectedRegion ? "translate-x-[15%]" : ""}`}>
       <Globe
         ref={globeRef}
