@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useCostPlanner } from "../hooks/useCostPlanner";
 import { GlobalParametersSection } from "./GlobalParametersSection";
 import { SectionAccordion } from "./SectionAccordion";
@@ -9,8 +9,15 @@ import { AddItemModal } from "./AddItemModal";
 import { formatCurrency } from "../utils/formatCurrency";
 import { pdf } from "@react-pdf/renderer";
 import { CostPlannerPDF } from "./CostPlannerPDF";
-import { CostItem, CalculatedCosts, CurrencyConfig } from "../types";
+import { CostItem, CalculatedCosts, CurrencyConfig, CurrencyCode, GlobalParameters } from "../types";
 import { useRouter } from "next/navigation";
+
+// Currency presets used when pre-filling from the globe (via ?currency=).
+const CURRENCY_PRESETS: Record<CurrencyCode, CurrencyConfig> = {
+  BRL: { code: "BRL", symbol: "R$", locale: "pt-BR", decimalPlaces: 2 },
+  USD: { code: "USD", symbol: "US$", locale: "en-US", decimalPlaces: 2 },
+  EUR: { code: "EUR", symbol: "€", locale: "en-US", decimalPlaces: 2 },
+};
 
 const SECTION_CONFIG = [
   {
@@ -49,6 +56,8 @@ export function CostPlannerLayout() {
     }
   };
 
+  const prefillApplied = useRef(false);
+
   const {
     state,
     totals,
@@ -62,6 +71,27 @@ export function CostPlannerLayout() {
   } = useCostPlanner();
 
   const areaUnitLabel = state.globalParameters.areaUnit === "m²" ? "m²" : "Hectare";
+
+  // Pre-fills crop and currency when arriving from the globe (?crop=&currency=),
+  // then strips the query so a refresh won't overwrite the user's later edits.
+  useEffect(() => {
+    if (prefillApplied.current) return;
+    const params = new URLSearchParams(window.location.search);
+    const crop = params.get("crop");
+    const currencyCode = params.get("currency") as CurrencyCode | null;
+
+    const updates: Partial<GlobalParameters> = {};
+    if (crop) updates.crop = crop;
+    if (currencyCode && CURRENCY_PRESETS[currencyCode]) {
+      updates.currency = CURRENCY_PRESETS[currencyCode];
+    }
+
+    if (Object.keys(updates).length > 0) {
+      updateGlobalParameters(updates);
+      router.replace("/cost-planner");
+    }
+    prefillApplied.current = true;
+  }, [updateGlobalParameters, router]);
 
   const [addItemModalOpen, setAddItemModalOpen] = useState(false);
   const [addItemSection, setAddItemSection] = useState<"Preparo" | "Plantio" | "Manejo" | "Colheita">("Preparo");
