@@ -62,7 +62,9 @@ export default function GlobeCanvas() {
     countryCode: string | null;
     climate: string;
     soil: string;
+
     soilTexture: string | null;
+
     crops: CropRecommendation[];
     cropMessage: string | null;
   } | null>(null);
@@ -236,7 +238,9 @@ export default function GlobeCanvas() {
               countryCode: null,
               climate: "Carregando...",
               soil: "Carregando informações do solo...",
+
               soilTexture: null,
+
               crops: [],
               cropMessage: "Calculando...",
             });
@@ -295,9 +299,11 @@ export default function GlobeCanvas() {
               soil: soilData.hasData
                 ? soilData.soilSummary
                 : "Sem dados de solo nesse ponto exato. Tente clicar em uma área rural próxima.",
+
               soilTexture: cropData.hasData
                 ? (cropData.textureLabel?.replace(/\s*\(.*\)$/, "") ?? null)
                 : null,
+
               crops: cropData.recommendations ?? [],
               cropMessage: cropData.hasData
                 ? cropData.textureLabel ?? null
@@ -311,6 +317,7 @@ export default function GlobeCanvas() {
               countryCode: null,
               climate: "Clima ainda não integrado",
               soil: "Erro ao consultar o SoilGrids",
+
               soilTexture: null,
               crops: [],
               cropMessage: "Sugestão indisponível",
