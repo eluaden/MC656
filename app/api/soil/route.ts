@@ -1,31 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { hasUsefulSoilData, buildSoilSummary } from "./soil-utils";
+import { SoilGridsAdapter } from "@/app/lib/datasources/soil-grids-adapter";
 
-async function fetchSoil(lat: number, lng: number) {
-  const params = new URLSearchParams();
-  params.set("lon", String(lng));
-  params.set("lat", String(lat));
-  params.append("property", "clay");
-  params.append("property", "sand");
-  params.append("property", "silt");
-  params.append("property", "phh2o");
-  params.append("property", "soc");
-  params.append("depth", "0-5cm");
-  params.append("value", "mean");
-
-  const url = `https://rest.isric.org/soilgrids/v2.0/properties/query?${params.toString()}`;
-
-  const response = await fetch(url, {
-    headers: { Accept: "application/json" },
-    cache: "force-cache",
-  });
-
-  if (!response.ok) {
-    throw new Error(`Erro SoilGrids: ${response.status}`);
-  }
-
-  return response.json();
-}
+const soilAdapter = new SoilGridsAdapter();
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -50,16 +26,8 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const raw = await fetchSoil(lat, lng);
-
-    return NextResponse.json({
-      lat,
-      lng,
-      source: "SoilGrids",
-      hasData: hasUsefulSoilData(raw),
-      ...buildSoilSummary(raw),
-      raw,
-    });
+    const data = await soilAdapter.fetch({ lat, lng });
+    return NextResponse.json({ lat, lng, ...data });
   } catch (error) {
     return NextResponse.json(
       {

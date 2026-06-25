@@ -1,27 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { buildLocationPayload } from "./location-utils";
-import type { NominatimResponse } from "./location-utils";
+import { NominatimAdapter } from "@/app/lib/datasources/nominatim-adapter";
 
-async function fetchLocation(lat: number, lng: number) {
-  const params = new URLSearchParams();
-  params.set("format", "json");
-  params.set("lat", String(lat));
-  params.set("lon", String(lng));
-
-  const url = `https://nominatim.openstreetmap.org/reverse?${params.toString()}`;
-  const response = await fetch(url, {
-    headers: {
-      "User-Agent": "mc656-academico/1.0",
-    },
-    cache: "no-store",
-  });
-
-  if (!response.ok) {
-    throw new Error(`Erro Nominatim: ${response.status}`);
-  }
-
-  return (await response.json()) as NominatimResponse;
-}
+const locationAdapter = new NominatimAdapter();
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -46,15 +26,8 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const raw = await fetchLocation(lat, lng);
-
-    return NextResponse.json({
-      lat,
-      lng,
-      source: "Nominatim",
-      ...buildLocationPayload(raw, lat, lng),
-      raw,
-    });
+    const data = await locationAdapter.fetch({ lat, lng });
+    return NextResponse.json({ lat, lng, ...data });
   } catch (error) {
     return NextResponse.json(
       {
