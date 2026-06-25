@@ -83,6 +83,25 @@ export default function Home() {
             </svg>
             Cost Planner
           </Link>
+
+          <Link
+            href="/simulator"
+            className="group flex h-14 min-w-[200px] items-center justify-center gap-3 rounded-2xl bg-white/15 px-8 text-lg font-semibold text-white shadow-lg shadow-black/20 ring-1 ring-white/20 backdrop-blur-sm transition-all duration-200 hover:bg-white/25 hover:shadow-xl hover:ring-white/40 hover:scale-105 active:scale-100"
+          >
+            <svg
+              className="h-5 w-5 transition-transform duration-200 group-hover:scale-110"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <path d="M3 9h18M3 15h18M9 3v18M15 3v18" />
+            </svg>
+            Mapa de Plantio
+          </Link>
         </div>
       </main>
     </div>
