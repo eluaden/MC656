@@ -6,6 +6,7 @@ export type NominatimAddress = {
   county?: string;
   state?: string;
   country?: string;
+  country_code?: string;
 };
 
 export type NominatimResponse = {
@@ -38,6 +39,7 @@ export function buildLocationPayload(
       cityName: null,
       state: null,
       country: null,
+      countryCode: null,
       locationLabel: `Lat ${lat.toFixed(2)}, Lng ${lng.toFixed(2)}`,
     };
   }
@@ -45,12 +47,14 @@ export function buildLocationPayload(
   const cityName = pickCityName(data.address);
   const state = data.address?.state ?? null;
   const country = data.address?.country ?? null;
+  const countryCode = data.address?.country_code?.toLowerCase() ?? null;
   const parts = [cityName, state, country].filter(Boolean);
 
   return {
     cityName,
     state,
     country,
+    countryCode,
     locationLabel:
       parts.length > 0
         ? parts.join(", ")

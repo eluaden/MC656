@@ -1,6 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   useEffect,
   useRef,
@@ -16,7 +18,24 @@ const Globe = dynamic(() => import("react-globe.gl"), {
   ssr: false,
 }) as ForwardRefExoticComponent<GlobeProps & RefAttributes<GlobeMethods>>;
 
+// Eurozone country codes (ISO 3166-1 alpha-2) for currency inference.
+const EUROZONE = new Set([
+  "at", "be", "cy", "ee", "fi", "fr", "de", "gr", "ie", "it",
+  "lv", "lt", "lu", "mt", "nl", "pt", "sk", "si", "es", "hr",
+]);
+
+// Maps a country code to one of the planner's supported currencies (BRL/USD/EUR),
+// falling back to BRL — the planner's default.
+function currencyForCountry(code: string | null): "BRL" | "USD" | "EUR" {
+  if (!code) return "BRL";
+  if (code === "br") return "BRL";
+  if (code === "us") return "USD";
+  if (EUROZONE.has(code)) return "EUR";
+  return "BRL";
+}
+
 export default function GlobeCanvas() {
+  const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
   const globeRef = useRef<GlobeMethods | null>(null);
   const [globeSize, setGlobeSize] = useState({ width: 0, height: 0 });
@@ -40,11 +59,32 @@ export default function GlobeCanvas() {
     lat: number;
     lng: number;
     name: string;
+    countryCode: string | null;
     climate: string;
     soil: string;
+
+    soilTexture: string | null;
+
     crops: CropRecommendation[];
     cropMessage: string | null;
   } | null>(null);
+
+  // controls the "which crop?" picker shown before going to the planner
+  const [cropPickerOpen, setCropPickerOpen] = useState(false);
+
+  // navigates to the planner pre-filling the chosen crop, the region's currency,
+  // and procedence context (region name, soil, crop suitability) for the badge
+  const goToPlanner = (crop?: CropRecommendation) => {
+    const params = new URLSearchParams();
+    if (crop) {
+      params.set("crop", crop.name);
+      params.set("match", String(crop.score));
+    }
+    params.set("currency", currencyForCountry(selectedRegion?.countryCode ?? null));
+    if (selectedRegion?.name) params.set("region", selectedRegion.name);
+    if (selectedRegion?.soilTexture) params.set("soil", selectedRegion.soilTexture);
+    router.push(`/cost-planner?${params.toString()}`);
+  };
 
   // stores the pin data for the currently selected region
   const [selectedMarker, setSelectedMarker] = useState<
@@ -76,6 +116,71 @@ export default function GlobeCanvas() {
       ref={containerRef}
       className="starry-bg relative h-screen w-screen overflow-hidden"
     >
+      {/* Back button — returns to the home menu */}
+      <Link
+        href="/"
+        className="absolute left-5 top-5 z-30 flex h-9 items-center gap-2 rounded-xl border border-white/[0.08] bg-black/60 px-3.5 text-sm font-medium text-gray-300 shadow-2xl shadow-black/40 backdrop-blur-xl transition hover:bg-white/10 hover:text-white"
+      >
+        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+        Voltar
+      </Link>
+
+      {/* "Ir para planejador" — only shown once a region is selected.
+          Anchored to the bottom-right corner so it doesn't sit over the globe. */}
+      {selectedRegion && (
+        <div className="absolute bottom-8 right-6 z-30 flex flex-col items-end gap-2">
+          {cropPickerOpen && (
+            <div className="panel-slide-in w-64 rounded-2xl border border-white/[0.08] bg-black/80 p-3 shadow-2xl shadow-black/50 backdrop-blur-xl">
+              <p className="px-1 pb-2 text-xs font-semibold uppercase tracking-wide text-emerald-400">
+                Qual cultura você quer planejar?
+              </p>
+              <div className="space-y-1">
+                {selectedRegion.crops.length > 0 ? (
+                  selectedRegion.crops.map((crop) => (
+                    <button
+                      key={crop.id}
+                      onClick={() => goToPlanner(crop)}
+                      className="flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left transition hover:bg-white/10"
+                    >
+                      <span className="flex min-w-0 items-center gap-2">
+                        <span className="text-base leading-none">{crop.emoji}</span>
+                        <span className="truncate text-sm font-medium text-gray-200">{crop.name}</span>
+                      </span>
+                      <span className="shrink-0 text-[10px] font-semibold text-gray-500">{crop.score}%</span>
+                    </button>
+                  ))
+                ) : (
+                  <p className="px-1 py-1 text-xs text-gray-400">
+                    Sem culturas recomendadas neste ponto.
+                  </p>
+                )}
+                <button
+                  onClick={() => goToPlanner()}
+                  className="mt-1 w-full rounded-lg border border-white/[0.06] px-2.5 py-2 text-left text-xs text-gray-400 transition hover:bg-white/5 hover:text-gray-200"
+                >
+                  Ir sem definir cultura →
+                </button>
+              </div>
+            </div>
+          )}
+          <button
+            onClick={() => setCropPickerOpen((v) => !v)}
+            className="panel-slide-in flex h-11 items-center gap-2 rounded-xl border border-emerald-400/30 bg-emerald-600/90 px-5 text-sm font-semibold text-white shadow-2xl shadow-emerald-900/40 backdrop-blur-xl transition hover:bg-emerald-500 hover:shadow-emerald-900/50"
+          >
+            Ir para planejador
+            <svg
+              className={`h-4 w-4 transition-transform ${cropPickerOpen ? "rotate-180" : ""}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              strokeWidth="2"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+            </svg>
+          </button>
+        </div>
+      )}
+
       <div className={`relative z-[1] transition-transform duration-700 ease-out ${selectedRegion ? "translate-x-[15%]" : ""}`}>
       <Globe
         ref={globeRef}
@@ -124,12 +229,18 @@ export default function GlobeCanvas() {
           try {
             setIsLoadingSoil(true);
 
+            setCropPickerOpen(false);
+
             setSelectedRegion({
               lat,
               lng,
               name: "Região selecionada",
+              countryCode: null,
               climate: "Carregando...",
               soil: "Carregando informações do solo...",
+
+              soilTexture: null,
+
               crops: [],
               cropMessage: "Calculando...",
             });
@@ -181,12 +292,18 @@ export default function GlobeCanvas() {
               lat,
               lng,
               name: locationName,
+              countryCode: locationData.countryCode ?? null,
               climate: weatherData.ok
                 ? weatherData.climateSummary
                 : "Não foi possível carregar o clima.",
               soil: soilData.hasData
                 ? soilData.soilSummary
                 : "Sem dados de solo nesse ponto exato. Tente clicar em uma área rural próxima.",
+
+              soilTexture: cropData.hasData
+                ? (cropData.textureLabel?.replace(/\s*\(.*\)$/, "") ?? null)
+                : null,
+
               crops: cropData.recommendations ?? [],
               cropMessage: cropData.hasData
                 ? cropData.textureLabel ?? null
@@ -197,8 +314,11 @@ export default function GlobeCanvas() {
               lat,
               lng,
               name: "Região selecionada",
+              countryCode: null,
               climate: "Clima ainda não integrado",
               soil: "Erro ao consultar o SoilGrids",
+
+              soilTexture: null,
               crops: [],
               cropMessage: "Sugestão indisponível",
             });
@@ -255,7 +375,7 @@ export default function GlobeCanvas() {
               </div>
             </div>
             <button
-              onClick={() => { setSelectedRegion(null); setSelectedMarker([]); }}
+              onClick={() => { setSelectedRegion(null); setSelectedMarker([]); setCropPickerOpen(false); }}
               className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-500 transition hover:bg-white/10 hover:text-white"
             >
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
