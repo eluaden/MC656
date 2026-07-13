@@ -9,7 +9,7 @@ import { AddItemModal } from "./AddItemModal";
 import { formatCurrency } from "../utils/formatCurrency";
 import { pdf } from "@react-pdf/renderer";
 import { CostPlannerPDF } from "./CostPlannerPDF";
-import { CostItem, CalculatedCosts, CurrencyConfig, CurrencyCode, GlobalParameters } from "../types";
+import { CostItem, CalculatedCosts, CurrencyConfig, CurrencyCode, GlobalParameters, SectionConfig } from "../types";
 import { useRouter } from "next/navigation";
 
 // Currency presets used when pre-filling from the globe (via ?currency=).
