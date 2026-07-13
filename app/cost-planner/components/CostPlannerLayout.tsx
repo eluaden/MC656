@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useCostPlanner } from "../hooks/useCostPlanner";
 import { GlobalParametersSection } from "./GlobalParametersSection";
 import { SectionAccordion } from "./SectionAccordion";
@@ -9,8 +9,15 @@ import { AddItemModal } from "./AddItemModal";
 import { formatCurrency } from "../utils/formatCurrency";
 import { pdf } from "@react-pdf/renderer";
 import { CostPlannerPDF } from "./CostPlannerPDF";
-import { CostItem, CalculatedCosts, CurrencyConfig, SectionConfig } from "../types";
-import Link from "next/link";
+import { CostItem, CalculatedCosts, CurrencyConfig, CurrencyCode, GlobalParameters } from "../types";
+import { useRouter } from "next/navigation";
+
+// Currency presets used when pre-filling from the globe (via ?currency=).
+const CURRENCY_PRESETS: Record<CurrencyCode, CurrencyConfig> = {
+  BRL: { code: "BRL", symbol: "R$", locale: "pt-BR", decimalPlaces: 2 },
+  USD: { code: "USD", symbol: "US$", locale: "en-US", decimalPlaces: 2 },
+  EUR: { code: "EUR", symbol: "€", locale: "en-US", decimalPlaces: 2 },
+};
 
 const SECTION_CONFIG: SectionConfig[] = [
   {
@@ -37,6 +44,26 @@ const SECTION_CONFIG: SectionConfig[] = [
 ];
 
 export function CostPlannerLayout() {
+  const router = useRouter();
+
+  // Returns to wherever the user came from (globe or home menu); falls back to
+  // the home menu if there's no in-app history (e.g. opened directly).
+  const handleBack = () => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+    } else {
+      router.push("/");
+    }
+  };
+
+  const prefillApplied = useRef(false);
+  const [originContext, setOriginContext] = useState<{
+    region: string | null;
+    soil: string | null;
+    crop: string | null;
+    match: string | null;
+  } | null>(null);
+
   const {
     state,
     totals,
@@ -50,6 +77,36 @@ export function CostPlannerLayout() {
   } = useCostPlanner();
 
   const areaUnitLabel = state.globalParameters.areaUnit === "m²" ? "m²" : "Hectare";
+
+  // Pre-fills crop and currency when arriving from the globe (?crop=&currency=),
+  // keeps the procedence context for the badge, then strips the query so a
+  // refresh won't overwrite the user's later edits.
+  useEffect(() => {
+    if (prefillApplied.current) return;
+    prefillApplied.current = true;
+
+    const params = new URLSearchParams(window.location.search);
+    const crop = params.get("crop");
+    const currencyCode = params.get("currency") as CurrencyCode | null;
+    const region = params.get("region");
+    const soil = params.get("soil");
+    const match = params.get("match");
+
+    const updates: Partial<GlobalParameters> = {};
+    if (crop) updates.crop = crop;
+    if (currencyCode && CURRENCY_PRESETS[currencyCode]) {
+      updates.currency = CURRENCY_PRESETS[currencyCode];
+    }
+
+    if (region || soil || crop) {
+      setOriginContext({ region, soil, crop, match });
+    }
+
+    if (Object.keys(updates).length > 0) {
+      updateGlobalParameters(updates);
+      router.replace("/cost-planner");
+    }
+  }, [updateGlobalParameters, router]);
 
   const [addItemModalOpen, setAddItemModalOpen] = useState(false);
   const [addItemSection, setAddItemSection] = useState<"Preparo" | "Plantio" | "Manejo" | "Colheita">("Preparo");
@@ -121,13 +178,29 @@ export function CostPlannerLayout() {
               Planejador de Custos
             </h1>
             <p className="text-gray-300">AgroGlobe - Gestão de Custos Agrícolas</p>
+            {originContext && (
+              <div className="mt-3 inline-flex max-w-full items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-200">
+                <svg className="h-3.5 w-3.5 shrink-0 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                <span className="truncate">
+                  {[
+                    originContext.region,
+                    originContext.soil,
+                    originContext.crop &&
+                      `${originContext.crop}${originContext.match ? ` ${originContext.match}%` : ""}`,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </span>
+              </div>
+            )}
           </div>
-          <Link
-            href="/"
+          <button
+            type="button"
+            onClick={handleBack}
             className="px-4 py-2 bg-gray-900 border border-gray-800 text-gray-300 hover:bg-gray-800 hover:text-white rounded-lg transition"
           >
             Voltar
-          </Link>
+          </button>
         </div>
 
         {/* Grid 2 colunas */}
