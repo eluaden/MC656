@@ -9,10 +9,10 @@ import { AddItemModal } from "./AddItemModal";
 import { formatCurrency } from "../utils/formatCurrency";
 import { pdf } from "@react-pdf/renderer";
 import { CostPlannerPDF } from "./CostPlannerPDF";
-import { CostItem, CalculatedCosts, CurrencyConfig } from "../types";
+import { CostItem, CalculatedCosts, CurrencyConfig, SectionConfig } from "../types";
 import Link from "next/link";
 
-const SECTION_CONFIG = [
+const SECTION_CONFIG: SectionConfig[] = [
   {
     id: "Preparo" as const,
     label: "Preparação do Solo",
@@ -104,6 +104,12 @@ export function CostPlannerLayout() {
     );
   }
 
+  const displayContext = {
+    area: state.globalParameters.area,
+    areaUnitLabel,
+    currency: state.globalParameters.currency,
+  };
+
   return (
     <div className="min-h-screen bg-black relative">
       {/* Conteúdo */}
@@ -136,17 +142,15 @@ export function CostPlannerLayout() {
             {SECTION_CONFIG.map((section) => (
               <SectionAccordion
                 key={section.id}
-                sectionId={section.id}
-                sectionLabel={section.label}
-                sectionDescription={section.description}
+                section={section}
                 items={getItemsBySection(section.id)}
-                onAddItem={() => handleOpenAddModal(section.id)}
-                onUpdateItem={updateItem}
-                onDeleteItem={deleteItem}
-                area={state.globalParameters.area}
-                areaUnitLabel={areaUnitLabel}
+                actions={{
+                  onAdd: () => handleOpenAddModal(section.id),
+                  onUpdate: updateItem,
+                  onDelete: deleteItem,
+                }}
+                displayContext={displayContext}
                 sectionTotal={totals.sectionTotals[section.id]}
-                currency={state.globalParameters.currency}
               />
             ))}
           </div>

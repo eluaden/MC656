@@ -50,3 +50,17 @@ export interface SectionConfig {
   label: string;
   description: string;
 }
+
+/** Agrupa os dados de exibição relacionados a área e moeda */
+export interface DisplayContext {
+  area: number;
+  areaUnitLabel: string;
+  currency: CurrencyConfig;
+}
+
+/** Agrupa os callbacks de operação sobre itens */
+export interface ItemActions {
+  onAdd: () => void;
+  onUpdate: (id: string, updates: Partial<CostItem>) => void;
+  onDelete: (id: string) => void;
+}

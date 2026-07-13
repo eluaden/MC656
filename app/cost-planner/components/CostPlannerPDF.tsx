@@ -10,6 +10,7 @@ import {
 } from "@react-pdf/renderer";
 import { CostPlannerState, CalculatedCosts } from "../types";
 import { formatCurrency } from "../utils/formatCurrency";
+import { calculateItemCost } from "../utils/calculateItemCost";
 
 interface PDFExportProps {
   state: CostPlannerState;
@@ -188,11 +189,7 @@ export function CostPlannerPDF({ state, totals }: PDFExportProps) {
                   <Text style={styles.tableCell}>Total</Text>
                 </View>
                 {items.map((item) => {
-                  const isFixed = item.quantityType === "fixed";
-                  const quantity = item.quantityPerAreaUnit;
-                  const itemCost = isFixed
-                    ? item.pricePerUnit * quantity
-                    : item.pricePerUnit * quantity * state.globalParameters.area;
+                  const itemCost = calculateItemCost(item, state.globalParameters.area);
                   return (
                     <View key={item.id} style={styles.tableRow}>
                       <Text style={[styles.tableCell, { flex: 2 }]}>
@@ -202,7 +199,7 @@ export function CostPlannerPDF({ state, totals }: PDFExportProps) {
                         {formatCurrency(item.pricePerUnit, state.globalParameters.currency)}
                       </Text>
                       <Text style={styles.tableCell}>
-                        {quantity} {isFixed && item.unit ? item.unit : ""}
+                        {item.quantityPerAreaUnit} {item.quantityType === "fixed" && item.unit ? item.unit : ""}
                       </Text>
                       <Text style={styles.tableCell}>
                         {formatCurrency(itemCost, state.globalParameters.currency)}

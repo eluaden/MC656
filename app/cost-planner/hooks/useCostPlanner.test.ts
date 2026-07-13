@@ -252,7 +252,7 @@ describe("useCostPlanner", () => {
         unit: "kg",
       };
 
-      const cost = result.current.calculateItemCost(testItem);
+      const cost = result.current.computeItemCost(testItem);
       expect(cost).toBe(10 * 5 * 100);
     });
 
@@ -274,7 +274,7 @@ describe("useCostPlanner", () => {
         unit: "kg",
       };
 
-      const cost = result.current.calculateItemCost(testItem);
+      const cost = result.current.computeItemCost(testItem);
       expect(cost).toBe(10 * 5 * 50); // 2500
     });
 
@@ -292,7 +292,7 @@ describe("useCostPlanner", () => {
         unit: "hora",
       };
 
-      const cost = result.current.calculateItemCost(testItem);
+      const cost = result.current.computeItemCost(testItem);
       expect(cost).toBe(5000 * 2); // 10000, no area multiplication
     });
   });
@@ -306,7 +306,7 @@ describe("useCostPlanner", () => {
 
       let expectedTotal = 0;
       state.items.forEach((item) => {
-        expectedTotal += result.current.calculateItemCost(item);
+        expectedTotal += result.current.computeItemCost(item);
       });
 
       expect(totals.totalCost).toBe(expectedTotal);
@@ -326,7 +326,7 @@ describe("useCostPlanner", () => {
       const preparoItems = state.items.filter((i) => i.section === "Preparo");
       let expectedPreparo = 0;
       preparoItems.forEach((item) => {
-        expectedPreparo += result.current.calculateItemCost(item);
+        expectedPreparo += result.current.computeItemCost(item);
       });
 
       expect(totals.sectionTotals["Preparo"]).toBe(expectedPreparo);
@@ -339,7 +339,7 @@ describe("useCostPlanner", () => {
       const insumosItems = state.items.filter((i) => i.costCategory === "Insumos");
       let expectedInsumos = 0;
       insumosItems.forEach((item) => {
-        expectedInsumos += result.current.calculateItemCost(item);
+        expectedInsumos += result.current.computeItemCost(item);
       });
 
       expect(totals.categoryTotals["Insumos"]).toBe(expectedInsumos);
