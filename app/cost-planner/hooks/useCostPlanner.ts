@@ -11,6 +11,7 @@ import {
   AreaUnit,
   CurrencyConfig,
 } from "../types";
+import { calculateItemCost } from "../utils/calculateItemCost";
 
 const STORAGE_KEY = "costPlannerState";
 
@@ -71,13 +72,8 @@ export function useCostPlanner() {
 
   // ==================== Cálculos ====================
 
-  const calculateItemCost = useCallback(
-    (item: CostItem): number => {
-      if (item.quantityType === "fixed") {
-        return item.pricePerUnit * item.quantityPerAreaUnit;
-      }
-      return item.pricePerUnit * item.quantityPerAreaUnit * state.globalParameters.area;
-    },
+  const computeItemCost = useCallback(
+    (item: CostItem): number => calculateItemCost(item, state.globalParameters.area),
     [state.globalParameters.area]
   );
 
@@ -98,7 +94,7 @@ export function useCostPlanner() {
     let totalCost = 0;
 
     state.items.forEach((item) => {
-      const itemCost = calculateItemCost(item);
+      const itemCost = computeItemCost(item);
       sectionTotals[item.section] += itemCost;
       categoryTotals[item.costCategory] += itemCost;
       totalCost += itemCost;
@@ -116,7 +112,7 @@ export function useCostPlanner() {
       totalCost,
       costPerAreaUnit,
     };
-  }, [state.items, state.globalParameters.area, calculateItemCost]);
+  }, [state.items, state.globalParameters.area, computeItemCost]);
 
   // ==================== Operações de Item ====================
 
@@ -244,7 +240,7 @@ export function useCostPlanner() {
   return {
     state,
     totals,
-    calculateItemCost,
+    computeItemCost,
     addItem,
     updateItem,
     deleteItem,

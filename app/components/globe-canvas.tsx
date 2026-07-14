@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -32,6 +33,63 @@ function currencyForCountry(code: string | null): "BRL" | "USD" | "EUR" {
   if (code === "us") return "USD";
   if (EUROZONE.has(code)) return "EUR";
   return "BRL";
+}
+
+interface RegionData {
+  soilData: { hasData: boolean; soilSummary?: string };
+  weatherData: { ok: boolean; climateSummary?: string };
+  locationData: { locationLabel?: string; cityName?: string; countryCode?: string };
+  cropData: { hasData: boolean; textureLabel?: string; recommendations?: CropRecommendation[] };
+}
+
+async function fetchRegionData(lat: number, lng: number): Promise<RegionData> {
+  const roundedLat = Number(lat.toFixed(3));
+  const roundedLng = Number(lng.toFixed(3));
+
+  const [soilResponse, weatherResponse, locationResponse, cropResponse] = await Promise.all([
+    fetch(`/api/soil?lat=${roundedLat}&lng=${roundedLng}`),
+    fetch(`/api/weather?lat=${roundedLat}&lng=${roundedLng}`),
+    fetch(`/api/location?lat=${roundedLat}&lng=${roundedLng}`),
+    fetch(`/api/crop?lat=${roundedLat}&lng=${roundedLng}`),
+  ]);
+
+  const [soilData, weatherData, locationData, cropData] = await Promise.all([
+    soilResponse.json(),
+    weatherResponse.json(),
+    locationResponse.json(),
+    cropResponse.json(),
+  ]);
+
+  return { soilData, weatherData, locationData, cropData };
+}
+
+function buildRegionState(lat: number, lng: number, data: RegionData) {
+  const { soilData, weatherData, locationData, cropData } = data;
+
+  const locationName =
+    locationData.locationLabel ??
+    locationData.cityName ??
+    "Região selecionada";
+
+  return {
+    lat,
+    lng,
+    name: locationName,
+    countryCode: locationData.countryCode ?? null,
+    climate: weatherData.ok
+      ? (weatherData.climateSummary ?? "Não foi possível carregar o clima.")
+      : "Não foi possível carregar o clima.",
+    soil: soilData.hasData
+      ? (soilData.soilSummary ?? "Sem dados de solo nesse ponto exato. Tente clicar em uma área rural próxima.")
+      : "Sem dados de solo nesse ponto exato. Tente clicar em uma área rural próxima.",
+    soilTexture: cropData.hasData
+      ? (cropData.textureLabel?.replace(/\s*\(.*\)$/, "") ?? null)
+      : null,
+    crops: cropData.recommendations ?? [],
+    cropMessage: cropData.hasData
+      ? cropData.textureLabel ?? null
+      : "Sem dados de solo nesse ponto — adequação 0%. Tente uma área rural próxima.",
+  };
 }
 
 export default function GlobeCanvas() {
@@ -90,6 +148,56 @@ export default function GlobeCanvas() {
   const [selectedMarker, setSelectedMarker] = useState<
     { lat: number; lng: number; name: string }[]
   >([]);
+
+  const setInitialLoadingState = useCallback((lat: number, lng: number) => {
+    setIsLoadingSoil(true);
+    setCropPickerOpen(false);
+
+    setSelectedRegion({
+      lat,
+      lng,
+      name: "Região selecionada",
+      countryCode: null,
+      climate: "Carregando...",
+      soil: "Carregando informações do solo...",
+      soilTexture: null,
+      crops: [],
+      cropMessage: "Calculando...",
+    });
+
+    setSelectedMarker([{ lat, lng, name: "Região selecionada" }]);
+  }, []);
+
+  const setFallbackRegionState = useCallback((lat: number, lng: number) => {
+    setSelectedRegion({
+      lat,
+      lng,
+      name: "Região selecionada",
+      countryCode: null,
+      climate: "Clima ainda não integrado",
+      soil: "Erro ao consultar o SoilGrids",
+      soilTexture: null,
+      crops: [],
+      cropMessage: "Sugestão indisponível",
+    });
+  }, []);
+
+  const handleGlobeClick = useCallback(async ({ lat, lng }: { lat: number; lng: number }) => {
+    try {
+      setInitialLoadingState(lat, lng);
+      globeRef.current?.pointOfView({ lat, lng }, 1000);
+
+      const data = await fetchRegionData(lat, lng);
+      const newState = buildRegionState(lat, lng, data);
+
+      setSelectedMarker([{ lat, lng, name: newState.name }]);
+      setSelectedRegion(newState);
+    } catch {
+      setFallbackRegionState(lat, lng);
+    } finally {
+      setIsLoadingSoil(false);
+    }
+  }, [setInitialLoadingState, setFallbackRegionState]);
 
   useEffect(() => {
     const updateSize = () => {
@@ -225,107 +333,7 @@ export default function GlobeCanvas() {
         pointColor="color"
         pointRadius={0.8}
         pointsMerge={false}
-        onGlobeClick={async ({ lat, lng }) => {
-          try {
-            setIsLoadingSoil(true);
-
-            setCropPickerOpen(false);
-
-            setSelectedRegion({
-              lat,
-              lng,
-              name: "Região selecionada",
-              countryCode: null,
-              climate: "Carregando...",
-              soil: "Carregando informações do solo...",
-
-              soilTexture: null,
-
-              crops: [],
-              cropMessage: "Calculando...",
-            });
-
-            setSelectedMarker([
-              {
-                lat,
-                lng,
-                name: "Região selecionada",
-              },
-            ]);
-
-            globeRef.current?.pointOfView({ lat, lng }, 1000);
-
-            const roundedLat = Number(lat.toFixed(3));
-            const roundedLng = Number(lng.toFixed(3));
-
-            const [
-              soilResponse,
-              weatherResponse,
-              locationResponse,
-              cropResponse,
-            ] = await Promise.all([
-              fetch(`/api/soil?lat=${roundedLat}&lng=${roundedLng}`),
-              fetch(`/api/weather?lat=${roundedLat}&lng=${roundedLng}`),
-              fetch(`/api/location?lat=${roundedLat}&lng=${roundedLng}`),
-              fetch(`/api/crop?lat=${roundedLat}&lng=${roundedLng}`),
-            ]);
-
-            const soilData = await soilResponse.json();
-            const weatherData = await weatherResponse.json();
-            const locationData = await locationResponse.json();
-            const cropData = await cropResponse.json();
-
-            const locationName =
-              locationData.locationLabel ??
-              locationData.cityName ??
-              "Região selecionada";
-
-            setSelectedMarker([
-              {
-                lat,
-                lng,
-                name: locationName,
-              },
-            ]);
-
-            setSelectedRegion({
-              lat,
-              lng,
-              name: locationName,
-              countryCode: locationData.countryCode ?? null,
-              climate: weatherData.ok
-                ? weatherData.climateSummary
-                : "Não foi possível carregar o clima.",
-              soil: soilData.hasData
-                ? soilData.soilSummary
-                : "Sem dados de solo nesse ponto exato. Tente clicar em uma área rural próxima.",
-
-              soilTexture: cropData.hasData
-                ? (cropData.textureLabel?.replace(/\s*\(.*\)$/, "") ?? null)
-                : null,
-
-              crops: cropData.recommendations ?? [],
-              cropMessage: cropData.hasData
-                ? cropData.textureLabel ?? null
-                : "Sem dados de solo nesse ponto — adequação 0%. Tente uma área rural próxima.",
-            });
-          } catch {
-            setSelectedRegion({
-              lat,
-              lng,
-              name: "Região selecionada",
-              countryCode: null,
-              climate: "Clima ainda não integrado",
-              soil: "Erro ao consultar o SoilGrids",
-
-              soilTexture: null,
-              crops: [],
-              cropMessage: "Sugestão indisponível",
-            });
-          } finally {
-            setIsLoadingSoil(false);
-          }
-        }}
+        onGlobeClick={handleGlobeClick}
         onGlobeReady={() => {
           const controls = globeRef.current?.controls();
           if (!controls) return;

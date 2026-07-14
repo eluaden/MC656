@@ -4,6 +4,7 @@ import React from "react";
 import { CostItem, CurrencyConfig } from "../types";
 import { NumericInput } from "./NumericInput";
 import { formatCurrency } from "../utils/formatCurrency";
+import { calculateItemCost } from "../utils/calculateItemCost";
 
 interface CostItemFormProps {
   item: CostItem;
@@ -22,9 +23,7 @@ export function CostItemForm({
   areaUnitLabel,
   currency,
 }: CostItemFormProps) {
-  const itemCost = item.quantityType === "fixed"
-    ? item.pricePerUnit * item.quantityPerAreaUnit
-    : item.pricePerUnit * item.quantityPerAreaUnit * area;
+  const itemCost = calculateItemCost(item, area);
 
   return (
     <div className="p-3 bg-gray-900 border border-gray-800 rounded-lg space-y-3">
