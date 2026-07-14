@@ -36,10 +36,10 @@ function currencyForCountry(code: string | null): "BRL" | "USD" | "EUR" {
 }
 
 interface RegionData {
-  soilData: any;
-  weatherData: any;
-  locationData: any;
-  cropData: any;
+  soilData: { hasData: boolean; soilSummary?: string };
+  weatherData: { ok: boolean; climateSummary?: string };
+  locationData: { locationLabel?: string; cityName?: string; countryCode?: string };
+  cropData: { hasData: boolean; textureLabel?: string; recommendations?: CropRecommendation[] };
 }
 
 async function fetchRegionData(lat: number, lng: number): Promise<RegionData> {
@@ -77,10 +77,10 @@ function buildRegionState(lat: number, lng: number, data: RegionData) {
     name: locationName,
     countryCode: locationData.countryCode ?? null,
     climate: weatherData.ok
-      ? weatherData.climateSummary
+      ? (weatherData.climateSummary ?? "Não foi possível carregar o clima.")
       : "Não foi possível carregar o clima.",
     soil: soilData.hasData
-      ? soilData.soilSummary
+      ? (soilData.soilSummary ?? "Sem dados de solo nesse ponto exato. Tente clicar em uma área rural próxima.")
       : "Sem dados de solo nesse ponto exato. Tente clicar em uma área rural próxima.",
     soilTexture: cropData.hasData
       ? (cropData.textureLabel?.replace(/\s*\(.*\)$/, "") ?? null)
