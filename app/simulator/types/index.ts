@@ -1,9 +1,21 @@
+/** Silhueta 3D usada para desenhar a planta no terreno. */
+export type PlantForm =
+  | "cereal-alto" // caule alto com palmito de folhas e espiga lateral (milho)
+  | "cana" // touceira alta de colmos com plumas no topo
+  | "espiga" // caule fino que doura e ganha espiga no topo (trigo, arroz)
+  | "arbusto" // moita baixa e redonda com vagens (soja, feijão)
+  | "cafeeiro" // tronco curto com copa densa e frutos vermelhos
+  | "algodoeiro" // arbusto com capuchos brancos no topo
+  | "raiz"; // rama baixa com tubérculos aparecendo na base (mandioca, batata)
+
 export type Crop = {
   id: string;
   name: string;
   emoji: string;
   /** Duração do ciclo em dias, em condições ótimas (base FAO Ecocrop). */
   cycleDays: number;
+  /** Silhueta 3D da planta. */
+  form: PlantForm;
   /** Altura da planta adulta na cena 3D, em unidades de célula. */
   matureHeight: number;
   /** Cor (hex) da folhagem adulta na cena 3D. */

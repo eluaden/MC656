@@ -9,6 +9,11 @@ import {
   growthProgress,
   growthStage,
 } from "../logic/growth";
+import {
+  computePlantInstance,
+  createPlantInstance,
+  PlantPartName,
+} from "../logic/plantModels";
 import { CellState, FieldConditions } from "../types";
 
 type FieldCanvasProps = {
@@ -27,11 +32,10 @@ type FieldCanvasProps = {
 const SOIL_EMPTY_A = new THREE.Color(0x8a6a45);
 const SOIL_EMPTY_B = new THREE.Color(0x7d5f3c);
 const SOIL_TILLED = new THREE.Color(0x543b26);
-const SPROUT_COLOR = new THREE.Color(0xa9d977);
-const WITHERED_COLOR = new THREE.Color(0x9c7a4a);
-const SEED_MOUND_COLOR = new THREE.Color(0x7a5a38);
 
 const MAX_CELLS = 40 * 40;
+
+const PART_NAMES: PlantPartName[] = ["stalk", "canopy", "crown", "fruit"];
 
 /**
  * Campo 3D interativo: um "terreno" de células onde o clique (ou arrasto)
@@ -118,22 +122,36 @@ export function FieldCanvas({
     base.receiveShadow = true;
     scene.add(base);
 
-    // Células, caules e frutos como malhas instanciadas (uma draw call cada).
+    // Células e peças das plantas como malhas instanciadas (uma draw call
+    // cada): caule cilíndrico, copa arredondada, coroa cônica e detalhe
+    // esférico (espiga/fruto/tubérculo/monte de semente).
     const tileGeometry = new THREE.BoxGeometry(0.92, 0.14, 0.92);
-    const stemGeometry = new THREE.ConeGeometry(0.32, 1, 7);
-    stemGeometry.translate(0, 0.5, 0); // base do caule no chão
-    const fruitGeometry = new THREE.SphereGeometry(0.17, 12, 10);
+    const stalkGeometry = new THREE.CylinderGeometry(0.055, 0.08, 1, 7);
+    stalkGeometry.translate(0, 0.5, 0); // base no chão; escala y = altura
+    // Detalhe 0 no icosaedro + flat shading dão o visual "low-poly" facetado.
+    const canopyGeometry = new THREE.IcosahedronGeometry(0.32, 0);
+    const crownGeometry = new THREE.ConeGeometry(0.3, 1, 6);
+    crownGeometry.translate(0, 0.5, 0);
+    const fruitGeometry = new THREE.IcosahedronGeometry(0.16, 1);
 
-    const plainMaterial = () =>
-      new THREE.MeshStandardMaterial({ roughness: 0.85, metalness: 0 });
+    const plainMaterial = (flat = false) =>
+      new THREE.MeshStandardMaterial({
+        roughness: 0.85,
+        metalness: 0,
+        flatShading: flat,
+      });
 
     const tiles = new THREE.InstancedMesh(tileGeometry, plainMaterial(), MAX_CELLS);
-    const stems = new THREE.InstancedMesh(stemGeometry, plainMaterial(), MAX_CELLS);
-    const fruits = new THREE.InstancedMesh(fruitGeometry, plainMaterial(), MAX_CELLS);
+    const plantMeshes: Record<PlantPartName, THREE.InstancedMesh> = {
+      stalk: new THREE.InstancedMesh(stalkGeometry, plainMaterial(), MAX_CELLS),
+      canopy: new THREE.InstancedMesh(canopyGeometry, plainMaterial(true), MAX_CELLS),
+      crown: new THREE.InstancedMesh(crownGeometry, plainMaterial(true), MAX_CELLS),
+      fruit: new THREE.InstancedMesh(fruitGeometry, plainMaterial(true), MAX_CELLS),
+    };
+    const allInstanced = [tiles, ...PART_NAMES.map((n) => plantMeshes[n])];
     tiles.receiveShadow = true;
-    stems.castShadow = true;
-    fruits.castShadow = true;
-    for (const mesh of [tiles, stems, fruits]) {
+    for (const name of PART_NAMES) plantMeshes[name].castShadow = true;
+    for (const mesh of allInstanced) {
       mesh.count = rows * cols;
       mesh.frustumCulled = false;
       scene.add(mesh);
@@ -157,7 +175,7 @@ export function FieldCanvas({
 
     // Atualiza posição/escala/cor de cada instância a partir do estado atual.
     const dummy = new THREE.Object3D();
-    const color = new THREE.Color();
+    const parts = createPlantInstance();
     const refresh = () => {
       const currentCells = cellsRef.current;
       const currentDay = dayRef.current;
@@ -183,11 +201,12 @@ export function FieldCanvas({
         );
 
         if (!cell || !crop) {
-          // Sem planta: caule e fruto invisíveis (escala zero).
+          // Sem planta: todas as peças invisíveis (escala zero).
           dummy.scale.set(0, 0, 0);
           dummy.updateMatrix();
-          stems.setMatrixAt(index, dummy.matrix);
-          fruits.setMatrixAt(index, dummy.matrix);
+          for (const name of PART_NAMES) {
+            plantMeshes[name].setMatrixAt(index, dummy.matrix);
+          }
           continue;
         }
 
@@ -202,49 +221,44 @@ export function FieldCanvas({
           suit,
         );
         const stage = growthStage(progress, suit);
-        const withered = stage === "murcha";
+        computePlantInstance(crop, progress, stage, parts);
 
-        // Caule: cresce em altura/largura com o progresso e escurece ao amadurecer.
-        const height = 0.06 + progress * crop.matureHeight;
-        const girth = 0.3 + 0.7 * progress;
-        dummy.position.set(x, 0.07, z);
-        dummy.rotation.set(0, 0, withered ? 0.5 : 0);
-        dummy.scale.set(girth, height, girth);
-        dummy.updateMatrix();
-        stems.setMatrixAt(index, dummy.matrix);
-        if (withered) {
-          color.copy(WITHERED_COLOR);
-        } else {
-          color.copy(SPROUT_COLOR).lerp(
-            new THREE.Color(crop.foliageColor),
-            Math.min(1, progress * 1.4),
+        // Variação determinística por célula (giro, escala e posição) para o
+        // campo não parecer um carimbo repetido.
+        const hash = (index * 2654435761) >>> 0;
+        const rotY = (hash % 628) / 100;
+        const jitterScale = 0.92 + ((hash >>> 8) % 17) / 100;
+        const jx = (((hash >>> 16) % 11) - 5) / 100;
+        const jz = (((hash >>> 24) % 11) - 5) / 100;
+        const cosY = Math.cos(rotY);
+        const sinY = Math.sin(rotY);
+
+        for (const name of PART_NAMES) {
+          const part = parts[name];
+          const mesh = plantMeshes[name];
+          if (!part.visible) {
+            dummy.scale.set(0, 0, 0);
+            dummy.updateMatrix();
+            mesh.setMatrixAt(index, dummy.matrix);
+            continue;
+          }
+          // O deslocamento lateral da peça gira junto com a planta.
+          const ox = part.x * cosY + part.z * sinY;
+          const oz = -part.x * sinY + part.z * cosY;
+          dummy.position.set(x + jx + ox, part.y, z + jz + oz);
+          dummy.rotation.set(0, rotY, part.rotZ);
+          dummy.scale.set(
+            part.sx * jitterScale,
+            part.sy,
+            part.sz * jitterScale,
           );
-        }
-        stems.setColorAt(index, color);
-
-        // Esfera auxiliar: monte de terra na semente, fruto na colheita.
-        if (stage === "semente") {
-          dummy.position.set(x, 0.09, z);
-          dummy.rotation.set(0, 0, 0);
-          dummy.scale.set(1, 0.4, 1);
-          fruits.setColorAt(index, SEED_MOUND_COLOR);
-        } else if (!withered && progress > 0.72) {
-          const fruitScale = Math.min(1, (progress - 0.72) / 0.28);
-          dummy.position.set(x, 0.07 + height * 0.9, z);
-          dummy.rotation.set(0, 0, 0);
-          dummy.scale.set(fruitScale, fruitScale, fruitScale);
-          fruits.setColorAt(index, color.set(crop.fruitColor));
-        } else {
-          dummy.scale.set(0, 0, 0);
           dummy.updateMatrix();
-          fruits.setMatrixAt(index, dummy.matrix);
-          continue;
+          mesh.setMatrixAt(index, dummy.matrix);
+          mesh.setColorAt(index, part.color);
         }
-        dummy.updateMatrix();
-        fruits.setMatrixAt(index, dummy.matrix);
       }
 
-      for (const mesh of [tiles, stems, fruits]) {
+      for (const mesh of allInstanced) {
         mesh.instanceMatrix.needsUpdate = true;
         if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
       }
