@@ -78,8 +78,8 @@ describe("useCropGrid - Análise de Valor Limite nos índices de célula", () =>
       result.current.plantCell(0, CROP);
       result.current.plantCell(3, CROP);
     });
-    expect(result.current.state.cells[0]).toBe(CROP);
-    expect(result.current.state.cells[3]).toBe(CROP);
+    expect(result.current.state.cells[0]?.cropId).toBe(CROP);
+    expect(result.current.state.cells[3]?.cropId).toBe(CROP);
     expect(result.current.plantedCount).toBe(2);
   });
 

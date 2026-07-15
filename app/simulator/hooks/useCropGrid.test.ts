@@ -35,7 +35,10 @@ describe("useCropGrid", () => {
 
     act(() => result.current.plantCell(5, CROP));
 
-    expect(result.current.state.cells[5]).toBe(CROP);
+    expect(result.current.state.cells[5]).toEqual({
+      cropId: CROP,
+      plantedDay: 0,
+    });
   });
 
   it("clears a planted cell", () => {
@@ -68,7 +71,7 @@ describe("useCropGrid", () => {
     act(() => result.current.setSize(5, 5));
 
     // same row 1, col 1 -> index 1 * 5 + 1 = 6 in a 5-column grid
-    expect(result.current.state.cells[6]).toBe(CROP);
+    expect(result.current.state.cells[6]?.cropId).toBe(CROP);
   });
 
   it("counts the planted cells", () => {
@@ -81,5 +84,73 @@ describe("useCropGrid", () => {
     });
 
     expect(result.current.plantedCount).toBe(3);
+  });
+});
+
+describe("useCropGrid - tempo de simulação", () => {
+  it("começa no dia zero", () => {
+    const { result } = renderHook(() => useCropGrid());
+    expect(result.current.state.day).toBe(0);
+  });
+
+  it("avança o relógio em dias (inclusive fracionários)", () => {
+    const { result } = renderHook(() => useCropGrid());
+
+    act(() => result.current.advanceDays(3));
+    act(() => result.current.advanceDays(0.5));
+
+    expect(result.current.state.day).toBeCloseTo(3.5);
+  });
+
+  it("ignora avanços inválidos (zero, negativo, NaN)", () => {
+    const { result } = renderHook(() => useCropGrid());
+
+    act(() => {
+      result.current.advanceDays(0);
+      result.current.advanceDays(-2);
+      result.current.advanceDays(Number.NaN);
+    });
+
+    expect(result.current.state.day).toBe(0);
+  });
+
+  it("registra o dia do plantio de cada célula", () => {
+    const { result } = renderHook(() => useCropGrid());
+
+    act(() => result.current.plantCell(0, CROP));
+    act(() => result.current.advanceDays(10));
+    act(() => result.current.plantCell(1, CROP));
+
+    expect(result.current.state.cells[0]?.plantedDay).toBe(0);
+    expect(result.current.state.cells[1]?.plantedDay).toBe(10);
+  });
+
+  it("reset volta ao dia zero mantendo o layout plantado", () => {
+    const { result } = renderHook(() => useCropGrid());
+
+    act(() => result.current.advanceDays(30));
+    act(() => result.current.plantCell(2, CROP));
+    act(() => result.current.resetSimulation());
+
+    expect(result.current.state.day).toBe(0);
+    expect(result.current.state.cells[2]).toEqual({
+      cropId: CROP,
+      plantedDay: 0,
+    });
+  });
+
+  it("migra o formato antigo do localStorage (célula como string)", () => {
+    localStorageMock.setItem(
+      "cropGridState",
+      JSON.stringify({ rows: 2, cols: 2, cells: [CROP, null, null, null] }),
+    );
+
+    const { result } = renderHook(() => useCropGrid());
+
+    expect(result.current.state.day).toBe(0);
+    expect(result.current.state.cells[0]).toEqual({
+      cropId: CROP,
+      plantedDay: 0,
+    });
   });
 });

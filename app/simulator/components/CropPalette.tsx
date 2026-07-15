@@ -1,36 +1,63 @@
 "use client";
 
 import { CROPS } from "../data/crops";
-import { ERASER_TOOL, Tool } from "../types";
+import { cropSuitability } from "../logic/growth";
+import { ERASER_TOOL, FieldConditions, Tool } from "../types";
 
 type CropPaletteProps = {
   activeTool: Tool;
+  conditions: FieldConditions;
   onSelect: (tool: Tool) => void;
 };
 
-export function CropPalette({ activeTool, onSelect }: CropPaletteProps) {
+function badgeClass(score: number): string {
+  if (score >= 70) return "bg-emerald-500/15 text-emerald-400";
+  if (score >= 40) return "bg-amber-500/15 text-amber-400";
+  return "bg-red-500/15 text-red-400";
+}
+
+export function CropPalette({
+  activeTool,
+  conditions,
+  onSelect,
+}: CropPaletteProps) {
   return (
-    <div className="rounded-2xl border border-white/[0.08] bg-black/40 p-4 backdrop-blur-xl">
-      <h2 className="px-1 pb-3 text-xs font-semibold uppercase tracking-wide text-emerald-400">
+    <div className="rounded-2xl border border-white/[0.08] bg-black/60 p-4 backdrop-blur-xl">
+      <h2 className="px-1 pb-1 text-xs font-semibold uppercase tracking-wide text-emerald-400">
         Culturas
       </h2>
+      <p className="px-1 pb-3 text-[10px] text-gray-500">
+        % de adequação às condições atuais do terreno
+      </p>
       <div className="grid grid-cols-2 gap-2">
         {CROPS.map((crop) => {
           const active = activeTool === crop.id;
+          const score = Math.round(
+            cropSuitability(crop.id, conditions) * 100,
+          );
           return (
             <button
               key={crop.id}
               type="button"
               aria-pressed={active}
               onClick={() => onSelect(crop.id)}
-              className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-left text-sm transition ${
+              className={`flex items-center gap-2 rounded-xl border px-2.5 py-2 text-left text-sm transition ${
                 active
                   ? "border-emerald-400/60 bg-emerald-500/15 text-white"
                   : "border-white/[0.06] bg-white/[0.02] text-gray-300 hover:bg-white/[0.06]"
               }`}
             >
               <span className="text-base leading-none">{crop.emoji}</span>
-              <span className="truncate font-medium">{crop.name}</span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-xs font-medium">
+                  {crop.name}
+                </span>
+                <span
+                  className={`mt-0.5 inline-block rounded-full px-1.5 text-[10px] font-semibold ${badgeClass(score)}`}
+                >
+                  {score}%
+                </span>
+              </span>
             </button>
           );
         })}
