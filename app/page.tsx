@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { UserMenu } from "./components/UserMenu";
 
 function GlobeIcon({ className }: { className?: string }) {
   return (
@@ -29,6 +30,11 @@ export default function Home() {
 
       {/* Dark overlay for readability */}
       <div className="absolute inset-0 bg-black/55" />
+
+      {/* Session indicator */}
+      <div className="absolute right-5 top-5 z-20">
+        <UserMenu />
+      </div>
 
       {/* Content */}
       <main className="relative z-10 flex flex-col items-center gap-12 px-6 text-center">
