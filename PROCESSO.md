@@ -18,7 +18,7 @@ Antes a arquitetura estava apenas implícita no código. Na Entrega 2 ela passou
 
 ## 4. Fluxo de trabalho
 
-O caminho de um requisito até a entrega ficou assim: o requisito é registrado como issue e priorizado no quadro; ao ser iniciado, cria-se uma branch para ele; o desenvolvimento inclui os testes; abre-se um Pull Request ligado à issue; um colega revisa e a verificação automática (lint, build e testes) precisa passar; aprovado, o código é integrado à branch principal e a issue é fechada.
+O caminho de um requisito até a entrega ficou assim: o requisito é registrado como issue e priorizado no quadro; ao ser iniciado, cria-se uma branch para ele; o desenvolvimento inclui a identificação de anomalias no código, a refatoração quando necessário e os testes; abre-se um Pull Request ligado à issue; um colega revisa e a verificação automática (lint, build e testes) precisa passar; aprovado, o código é integrado à branch principal e a issue é fechada.
 
 ## 5. Atividades fundamentais e guarda-chuva
 
@@ -53,12 +53,12 @@ Quadro Kanban no GitHub Project, repositório Git com branches por funcionalidad
 
 ## 7. Situação atual e próximos passos
 
-Hoje o processo cobre requisitos, arquitetura e um fluxo de integração com revisão e testes automatizados a cada mudança. A persistência ainda é feita apenas no navegador, sem autenticação nem banco de dados, e a cobertura de testes é parcial.
+Hoje o processo cobre requisitos, arquitetura e um fluxo de integração com revisão, tratamento de anomalias, refatoração e testes automatizados a cada mudança. Entre as anomalias tratadas até agora estão método longo, código duplicado e lista longa de parâmetros. A persistência ainda é feita apenas no navegador, sem autenticação nem banco de dados, e a cobertura de testes é parcial.
 
-Para as próximas entregas, a ideia é fechar os épicos ainda abertos de autenticação e persistência de dados, concluir o simulador com os estágios de crescimento, reaproveitar os adaptadores também na recomendação de cultura e ampliar os testes.
+Para as próximas entregas, a ideia é fechar os épicos ainda abertos de autenticação e persistência de dados, concluir o simulador com os estágios de crescimento, reaproveitar os adaptadores também na recomendação de cultura, ampliar os testes e manter o código mais organizado por meio de refatorações pontuais.
 
 ## 8. Retrospectiva
 
 Levar o processo para dentro do GitHub deu rastreabilidade do requisito até o merge, e a exigência de revisão e verificação automática antes de integrar ajudou a manter a qualidade e evitar regressões. A documentação da arquitetura e o uso do padrão Adapter deixaram o sistema mais fácil de evoluir, e a divisão do trabalho permitiu tocar features, refatoração e documentação em paralelo.
 
-Por outro lado, alguns itens ficaram abertos ao fim da entrega, o que mostra que o escopo foi um pouco otimista e que precisamos melhorar a estimativa e a priorização. Também faltou padronizar critérios de conclusão das tarefas, e a cobertura de testes ainda é desigual entre as partes do sistema.
+Com a prática de observar anomalias no código e tratá-las antes de fechar as entregas, o processo ficou mais cuidadoso e ajudou a reduzir retrabalho. Nesse caminho, também foram incluídos testes por particionamento em classes de equivalência e por análise de valor limite, aplicados em classifyTexture, suitability e useCropGrid. Por outro lado, alguns itens ficaram abertos ao fim da entrega, o que mostra que o escopo foi um pouco otimista e que precisamos melhorar a estimativa e a priorização. Também faltou padronizar critérios de conclusão das tarefas, e a cobertura de testes ainda é desigual entre as partes do sistema.
