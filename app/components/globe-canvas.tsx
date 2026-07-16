@@ -237,6 +237,16 @@ export default function GlobeCanvas() {
           Anchored to the bottom-right corner so it doesn't sit over the globe. */}
       {selectedRegion && (
         <div className="absolute bottom-8 right-6 z-30 flex flex-col items-end gap-2">
+          {/* opens the planting simulator pre-loaded with this point's climate/soil */}
+          <Link
+            href={`/simulator?lat=${selectedRegion.lat.toFixed(3)}&lng=${selectedRegion.lng.toFixed(3)}`}
+            className="panel-slide-in flex h-11 items-center gap-2 rounded-xl border border-white/[0.08] bg-black/60 px-5 text-sm font-semibold text-gray-200 shadow-2xl shadow-black/40 backdrop-blur-xl transition hover:bg-white/10 hover:text-white"
+          >
+            Simular plantio aqui
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </Link>
           {cropPickerOpen && (
             <div className="panel-slide-in w-64 rounded-2xl border border-white/[0.08] bg-black/80 p-3 shadow-2xl shadow-black/50 backdrop-blur-xl">
               <p className="px-1 pb-2 text-xs font-semibold uppercase tracking-wide text-emerald-400">
