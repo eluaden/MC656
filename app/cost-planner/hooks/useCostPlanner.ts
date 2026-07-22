@@ -13,6 +13,7 @@ import {
 } from "../types";
 import { calculateItemCost } from "../utils/calculateItemCost";
 import { usePersistedState } from "../../lib/state/usePersistedState";
+import { ANON_STATE_KEYS } from "../../lib/state/anonState";
 
 const DEFAULT_CURRENCY: CurrencyConfig = {
   code: "BRL",
@@ -59,7 +60,7 @@ function normalizeState(raw: unknown): CostPlannerState {
 export function useCostPlanner() {
   const { state, setState, isLoaded } = usePersistedState<CostPlannerState>({
     namespace: "costPlanner",
-    anonKey: "costPlannerState",
+    anonKey: ANON_STATE_KEYS.costPlanner,
     defaultState: DEFAULT_STATE,
     normalize: normalizeState,
   });

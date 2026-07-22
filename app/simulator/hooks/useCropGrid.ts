@@ -3,6 +3,7 @@
 import { useCallback } from "react";
 import { CellState, GridState } from "../types";
 import { usePersistedState } from "../../lib/state/usePersistedState";
+import { ANON_STATE_KEYS } from "../../lib/state/anonState";
 
 export const MIN_SIZE = 2;
 export const MAX_SIZE = 40;
@@ -85,7 +86,7 @@ export function useCropGrid() {
   // servidor (hydration mismatch).
   const { state, setState, isLoaded } = usePersistedState<GridState>({
     namespace: "cropGrid",
-    anonKey: "cropGridState",
+    anonKey: ANON_STATE_KEYS.cropGrid,
     defaultState: DEFAULT_STATE,
     normalize: normalizeState,
   });

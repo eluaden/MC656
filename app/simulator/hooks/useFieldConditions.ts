@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { FieldConditions } from "../types";
 import { usePersistedState } from "../../lib/state/usePersistedState";
+import { ANON_STATE_KEYS } from "../../lib/state/anonState";
 
 export const DEFAULT_CONDITIONS: FieldConditions = {
   temperature: 24,
@@ -42,7 +43,7 @@ export function useFieldConditions() {
     isLoaded,
   } = usePersistedState<FieldConditions>({
     namespace: "fieldConditions",
-    anonKey: "simFieldConditions",
+    anonKey: ANON_STATE_KEYS.fieldConditions,
     defaultState: DEFAULT_CONDITIONS,
     normalize: normalizeConditions,
   });

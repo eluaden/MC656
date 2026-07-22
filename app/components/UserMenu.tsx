@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../lib/auth/AuthProvider";
+import { clearAnonState } from "../lib/state/anonState";
 
 /** Indicador de sessão exibido na home: "Entrar" ou e-mail + "Sair". */
 export function UserMenu() {
@@ -11,6 +12,9 @@ export function UserMenu() {
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
+    // Reinicia a navegação anônima: descarta baldes de uma sessão anônima
+    // anterior para que, ao sair da conta, tudo recomece dos dados padrão.
+    clearAnonState();
     refresh();
     router.refresh();
   };
