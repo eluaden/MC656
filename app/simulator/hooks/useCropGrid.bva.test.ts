@@ -8,6 +8,11 @@ import { renderHook, act } from "@testing-library/react";
 import { useCropGrid, MIN_SIZE, MAX_SIZE } from "./useCropGrid";
 import { CROPS } from "../data/crops";
 
+// Visitante anônimo: a persistência cai no localStorage (sem chamadas de rede).
+jest.mock("../../lib/auth/AuthProvider", () => ({
+  useAuth: () => ({ user: null, status: "ready", refresh: () => {} }),
+}));
+
 const localStorageMock = (() => {
   let store: Record<string, string> = {};
   return {

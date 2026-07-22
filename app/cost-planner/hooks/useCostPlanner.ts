@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import {
   CostPlannerState,
   CostItem,
@@ -12,8 +12,7 @@ import {
   CurrencyConfig,
 } from "../types";
 import { calculateItemCost } from "../utils/calculateItemCost";
-
-const STORAGE_KEY = "costPlannerState";
+import { usePersistedState } from "../../lib/state/usePersistedState";
 
 const DEFAULT_CURRENCY: CurrencyConfig = {
   code: "BRL",
@@ -32,43 +31,38 @@ const DEFAULT_STATE: CostPlannerState = {
   items: getDefaultItems(),
 };
 
-function getInitialState(): CostPlannerState {
-  if (typeof window === "undefined") return DEFAULT_STATE;
-  const saved = localStorage.getItem(STORAGE_KEY);
-  if (!saved) return DEFAULT_STATE;
-  try {
-    const parsedState = JSON.parse(saved);
-    return {
-      globalParameters: {
-        ...DEFAULT_STATE.globalParameters,
-        ...parsedState.globalParameters,
-        currency: parsedState.globalParameters?.currency || DEFAULT_CURRENCY,
-      },
-      items: (parsedState.items || []).map((item: Record<string, unknown>) => ({
-        ...item,
-        quantityPerAreaUnit: (item.quantityPerAreaUnit as number) ?? (item.quantityPerHectare as number) ?? 0,
-        quantityType: (item.quantityType as string) ?? "per_area",
-      })),
-    };
-  } catch {
-    return DEFAULT_STATE;
-  }
+/**
+ * Normaliza o estado persistido (do servidor ou do localStorage). Aplica os
+ * defaults e migra formatos antigos (quantityPerHectare → quantityPerAreaUnit,
+ * quantityType ausente, moeda ausente).
+ */
+function normalizeState(raw: unknown): CostPlannerState {
+  if (!raw || typeof raw !== "object") return DEFAULT_STATE;
+  const parsedState = raw as {
+    globalParameters?: Partial<GlobalParameters>;
+    items?: Record<string, unknown>[];
+  };
+  return {
+    globalParameters: {
+      ...DEFAULT_STATE.globalParameters,
+      ...parsedState.globalParameters,
+      currency: parsedState.globalParameters?.currency || DEFAULT_CURRENCY,
+    },
+    items: (parsedState.items || []).map((item: Record<string, unknown>) => ({
+      ...item,
+      quantityPerAreaUnit: (item.quantityPerAreaUnit as number) ?? (item.quantityPerHectare as number) ?? 0,
+      quantityType: (item.quantityType as string) ?? "per_area",
+    })) as CostItem[],
+  };
 }
 
 export function useCostPlanner() {
-  const [state, setState] = useState<CostPlannerState>(getInitialState);
-  const [isLoaded, setIsLoaded] = useState(false);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setIsLoaded(true);
-  }, []);
-
-  useEffect(() => {
-    if (isLoaded) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    }
-  }, [state, isLoaded]);
+  const { state, setState, isLoaded } = usePersistedState<CostPlannerState>({
+    namespace: "costPlanner",
+    anonKey: "costPlannerState",
+    defaultState: DEFAULT_STATE,
+    normalize: normalizeState,
+  });
 
   // ==================== Cálculos ====================
 
@@ -127,7 +121,7 @@ export function useCostPlanner() {
         items: [...prev.items, newItem],
       }));
     },
-    []
+    [setState]
   );
 
   const updateItem = useCallback((id: string, updates: Partial<CostItem>) => {
@@ -137,14 +131,14 @@ export function useCostPlanner() {
         item.id === id ? { ...item, ...updates } : item
       ),
     }));
-  }, []);
+  }, [setState]);
 
   const deleteItem = useCallback((id: string) => {
     setState((prev) => ({
       ...prev,
       items: prev.items.filter((item) => item.id !== id),
     }));
-  }, []);
+  }, [setState]);
 
   // ==================== Parâmetros Globais ====================
 
@@ -203,15 +197,15 @@ export function useCostPlanner() {
         return newState;
       });
     },
-    []
+    [setState]
   );
 
   // ==================== Persistência ====================
 
   const saveProject = useCallback(() => {
-    // State is auto-saved, but this can be used for explicit feedback
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  }, [state]);
+    // O estado é salvo automaticamente (servidor ou localStorage) pelo hook de
+    // persistência; mantido para feedback explícito na UI.
+  }, []);
 
   const clearForm = useCallback(() => {
     const defaults = {
@@ -224,7 +218,7 @@ export function useCostPlanner() {
       items: getDefaultItems(),
     };
     setState(defaults);
-  }, []);
+  }, [setState]);
 
   // ==================== Acesso aos dados ====================
 

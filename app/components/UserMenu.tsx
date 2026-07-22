@@ -2,48 +2,22 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-
-type State =
-  | { status: "loading" }
-  | { status: "anonymous" }
-  | { status: "authenticated"; email: string };
+import { useAuth } from "../lib/auth/AuthProvider";
 
 /** Indicador de sessão exibido na home: "Entrar" ou e-mail + "Sair". */
 export function UserMenu() {
   const router = useRouter();
-  const [state, setState] = useState<State>({ status: "loading" });
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const response = await fetch("/api/auth/me");
-        if (cancelled) return;
-        if (!response.ok) {
-          setState({ status: "anonymous" });
-          return;
-        }
-        const data = await response.json();
-        setState({ status: "authenticated", email: data.user.email });
-      } catch {
-        if (!cancelled) setState({ status: "anonymous" });
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const { user, status, refresh } = useAuth();
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
-    setState({ status: "anonymous" });
+    refresh();
     router.refresh();
   };
 
-  if (state.status === "loading") return null;
+  if (status === "loading") return null;
 
-  if (state.status === "anonymous") {
+  if (!user) {
     return (
       <Link
         href="/login"
@@ -59,7 +33,7 @@ export function UserMenu() {
 
   return (
     <div className="flex h-10 items-center gap-3 rounded-xl bg-white/15 px-4 text-sm text-white ring-1 ring-white/20 backdrop-blur-sm">
-      <span className="max-w-[180px] truncate font-medium">{state.email}</span>
+      <span className="max-w-[180px] truncate font-medium">{user.email}</span>
       <button
         type="button"
         onClick={handleLogout}

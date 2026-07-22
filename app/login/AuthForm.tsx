@@ -7,11 +7,13 @@ import {
   validateEmail,
   validatePassword,
 } from "../lib/auth/validation";
+import { useAuth } from "../lib/auth/AuthProvider";
 
 type Mode = "login" | "register";
 
 export function AuthForm() {
   const router = useRouter();
+  const { refresh } = useAuth();
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -42,6 +44,10 @@ export function AuthForm() {
         setError(data.error ?? "Algo deu errado. Tente novamente.");
         return;
       }
+      // O provider vive no root layout e persiste na navegação client-side;
+      // refresh() força o rebusca da sessão para os hooks carregarem o bucket
+      // do usuário recém-autenticado.
+      refresh();
       router.push("/");
       router.refresh();
     } catch {

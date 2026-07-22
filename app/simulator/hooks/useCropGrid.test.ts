@@ -1,6 +1,11 @@
-import { renderHook, act } from "@testing-library/react";
+import { renderHook, act, waitFor } from "@testing-library/react";
 import { useCropGrid } from "./useCropGrid";
 import { CROPS } from "../data/crops";
+
+// Visitante anônimo: a persistência cai no localStorage (sem chamadas de rede).
+jest.mock("../../lib/auth/AuthProvider", () => ({
+  useAuth: () => ({ user: null, status: "ready", refresh: () => {} }),
+}));
 
 const localStorageMock = (() => {
   let store: Record<string, string> = {};
@@ -139,13 +144,15 @@ describe("useCropGrid - tempo de simulação", () => {
     });
   });
 
-  it("migra o formato antigo do localStorage (célula como string)", () => {
+  it("migra o formato antigo do localStorage (célula como string)", async () => {
     localStorageMock.setItem(
       "cropGridState",
       JSON.stringify({ rows: 2, cols: 2, cells: [CROP, null, null, null] }),
     );
 
     const { result } = renderHook(() => useCropGrid());
+
+    await waitFor(() => expect(result.current.isLoaded).toBe(true));
 
     expect(result.current.state.day).toBe(0);
     expect(result.current.state.cells[0]).toEqual({

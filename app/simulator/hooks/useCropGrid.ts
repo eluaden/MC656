@@ -1,9 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
 import { CellState, GridState } from "../types";
-
-const STORAGE_KEY = "cropGridState";
+import { usePersistedState } from "../../lib/state/usePersistedState";
 
 export const MIN_SIZE = 2;
 export const MAX_SIZE = 40;
@@ -40,27 +39,27 @@ function parseCell(raw: unknown): CellState | null {
   return null;
 }
 
-function loadSavedState(): GridState {
-  const saved = localStorage.getItem(STORAGE_KEY);
-  if (!saved) return DEFAULT_STATE;
-  try {
-    const parsed = JSON.parse(saved) as Partial<GridState>;
-    const rows = clampSize(Number(parsed.rows));
-    const cols = clampSize(Number(parsed.cols));
-    const cells = Array.isArray(parsed.cells) ? parsed.cells : [];
-    const normalized = Array(rows * cols)
-      .fill(null)
-      .map((_, i) => parseCell(cells[i]));
-    const day = Number(parsed.day);
-    return {
-      rows,
-      cols,
-      cells: normalized,
-      day: Number.isFinite(day) && day > 0 ? day : 0,
-    };
-  } catch {
-    return DEFAULT_STATE;
-  }
+/**
+ * Normaliza a grade persistida (do servidor ou do localStorage). Aceita o
+ * formato antigo das células (via parseCell) e limita rows/cols ao intervalo
+ * permitido.
+ */
+function normalizeState(raw: unknown): GridState {
+  if (!raw || typeof raw !== "object") return DEFAULT_STATE;
+  const parsed = raw as Partial<GridState>;
+  const rows = clampSize(Number(parsed.rows));
+  const cols = clampSize(Number(parsed.cols));
+  const cells = Array.isArray(parsed.cells) ? parsed.cells : [];
+  const normalized = Array(rows * cols)
+    .fill(null)
+    .map((_, i) => parseCell(cells[i]));
+  const day = Number(parsed.day);
+  return {
+    rows,
+    cols,
+    cells: normalized,
+    day: Number.isFinite(day) && day > 0 ? day : 0,
+  };
 }
 
 /** Copies the planted cells into a grid of a new size, preserving overlap. */
@@ -81,23 +80,15 @@ function resizeCells(
 }
 
 export function useCropGrid() {
-  // Começa sempre com o estado padrão e só aplica o que está salvo após a
-  // montagem: ler o localStorage durante a primeira renderização divergiria
-  // do HTML gerado no servidor (hydration mismatch).
-  const [state, setState] = useState<GridState>(DEFAULT_STATE);
-  const [isLoaded, setIsLoaded] = useState(false);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setState(loadSavedState());
-    setIsLoaded(true);
-  }, []);
-
-  useEffect(() => {
-    if (isLoaded) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    }
-  }, [state, isLoaded]);
+  // Começa com o estado padrão e carrega (servidor ou localStorage) após a
+  // montagem: ler durante a primeira renderização divergiria do HTML gerado no
+  // servidor (hydration mismatch).
+  const { state, setState, isLoaded } = usePersistedState<GridState>({
+    namespace: "cropGrid",
+    anonKey: "cropGridState",
+    defaultState: DEFAULT_STATE,
+    normalize: normalizeState,
+  });
 
   const plantCell = useCallback((index: number, cropId: string) => {
     setState((prev) => {
@@ -107,7 +98,7 @@ export function useCropGrid() {
       cells[index] = { cropId, plantedDay: prev.day };
       return { ...prev, cells };
     });
-  }, []);
+  }, [setState]);
 
   const clearCell = useCallback((index: number) => {
     setState((prev) => {
@@ -117,14 +108,14 @@ export function useCropGrid() {
       cells[index] = null;
       return { ...prev, cells };
     });
-  }, []);
+  }, [setState]);
 
   const clearAll = useCallback(() => {
     setState((prev) => ({
       ...prev,
       cells: Array(prev.rows * prev.cols).fill(null),
     }));
-  }, []);
+  }, [setState]);
 
   const setSize = useCallback((rows: number, cols: number) => {
     setState((prev) => {
@@ -138,13 +129,13 @@ export function useCropGrid() {
         cells: resizeCells(prev, nextRows, nextCols),
       };
     });
-  }, []);
+  }, [setState]);
 
   /** Avança o relógio da simulação em `delta` dias (pode ser fracionário). */
   const advanceDays = useCallback((delta: number) => {
     if (!Number.isFinite(delta) || delta <= 0) return;
     setState((prev) => ({ ...prev, day: prev.day + delta }));
-  }, []);
+  }, [setState]);
 
   /** Volta a simulação ao dia zero, com todas as plantas no estágio inicial. */
   const resetSimulation = useCallback(() => {
@@ -155,7 +146,7 @@ export function useCropGrid() {
         cell ? { ...cell, plantedDay: 0 } : null,
       ),
     }));
-  }, []);
+  }, [setState]);
 
   const plantedCount = state.cells.filter((cell) => cell !== null).length;
 

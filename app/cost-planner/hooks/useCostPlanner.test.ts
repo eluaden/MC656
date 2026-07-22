@@ -1,6 +1,11 @@
-import { renderHook, act } from "@testing-library/react";
+import { renderHook, act, waitFor } from "@testing-library/react";
 import { useCostPlanner } from "./useCostPlanner";
 import { CostItem } from "../types";
+
+// Visitante anônimo: a persistência cai no localStorage (sem chamadas de rede).
+jest.mock("../../lib/auth/AuthProvider", () => ({
+  useAuth: () => ({ user: null, status: "ready", refresh: () => {} }),
+}));
 
 const localStorageMock = (() => {
   let store: Record<string, string> = {};
@@ -479,7 +484,7 @@ describe("useCostPlanner", () => {
   // ==================== localStorage Migration ====================
 
   describe("localStorage migration", () => {
-    it("migrates old quantityPerHectare to quantityPerAreaUnit", () => {
+    it("migrates old quantityPerHectare to quantityPerAreaUnit", async () => {
       const oldState = {
         globalParameters: { crop: "Soja", area: 50, areaUnit: "hectares" },
         items: [
@@ -498,15 +503,15 @@ describe("useCostPlanner", () => {
 
       const { result } = renderHook(() => useCostPlanner());
 
-      // Wait for useEffect to load
-      act(() => {});
+      // Aguarda a carga assíncrona (effect) concluir.
+      await waitFor(() => expect(result.current.isLoaded).toBe(true));
 
       const item = result.current.state.items.find((i) => i.id === "old-1");
       expect(item).toBeDefined();
       expect(item!.quantityPerAreaUnit).toBe(500);
     });
 
-    it("defaults quantityType to per_area for old items", () => {
+    it("defaults quantityType to per_area for old items", async () => {
       const oldState = {
         globalParameters: { crop: "Café", area: 10, areaUnit: "hectares" },
         items: [
@@ -524,13 +529,13 @@ describe("useCostPlanner", () => {
       localStorageMock.setItem("costPlannerState", JSON.stringify(oldState));
 
       const { result } = renderHook(() => useCostPlanner());
-      act(() => {});
+      await waitFor(() => expect(result.current.isLoaded).toBe(true));
 
       const item = result.current.state.items.find((i) => i.id === "old-2");
       expect(item!.quantityType).toBe("per_area");
     });
 
-    it("defaults currency to BRL when missing from saved state", () => {
+    it("defaults currency to BRL when missing from saved state", async () => {
       const oldState = {
         globalParameters: { crop: "Soja", area: 100, areaUnit: "hectares" },
         items: [],
@@ -538,7 +543,7 @@ describe("useCostPlanner", () => {
       localStorageMock.setItem("costPlannerState", JSON.stringify(oldState));
 
       const { result } = renderHook(() => useCostPlanner());
-      act(() => {});
+      await waitFor(() => expect(result.current.isLoaded).toBe(true));
 
       expect(result.current.state.globalParameters.currency.code).toBe("BRL");
       expect(result.current.state.globalParameters.currency.symbol).toBe("R$");

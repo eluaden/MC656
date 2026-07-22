@@ -2,8 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { FieldConditions } from "../types";
-
-const STORAGE_KEY = "simFieldConditions";
+import { usePersistedState } from "../../lib/state/usePersistedState";
 
 export const DEFAULT_CONDITIONS: FieldConditions = {
   temperature: 24,
@@ -11,26 +10,22 @@ export const DEFAULT_CONDITIONS: FieldConditions = {
   source: "manual",
 };
 
-function loadSavedConditions(): FieldConditions {
-  const saved = localStorage.getItem(STORAGE_KEY);
-  if (!saved) return DEFAULT_CONDITIONS;
-  try {
-    const parsed = JSON.parse(saved) as Partial<FieldConditions>;
-    const temperature = Number(parsed.temperature);
-    const ph = Number(parsed.ph);
-    if (!Number.isFinite(temperature) || !Number.isFinite(ph)) {
-      return DEFAULT_CONDITIONS;
-    }
-    return {
-      temperature,
-      ph,
-      source: parsed.source === "mapa" ? "mapa" : "manual",
-      regionLabel:
-        typeof parsed.regionLabel === "string" ? parsed.regionLabel : undefined,
-    };
-  } catch {
+/** Normaliza as condições persistidas (do servidor ou do localStorage). */
+function normalizeConditions(raw: unknown): FieldConditions {
+  if (!raw || typeof raw !== "object") return DEFAULT_CONDITIONS;
+  const parsed = raw as Partial<FieldConditions>;
+  const temperature = Number(parsed.temperature);
+  const ph = Number(parsed.ph);
+  if (!Number.isFinite(temperature) || !Number.isFinite(ph)) {
     return DEFAULT_CONDITIONS;
   }
+  return {
+    temperature,
+    ph,
+    source: parsed.source === "mapa" ? "mapa" : "manual",
+    regionLabel:
+      typeof parsed.regionLabel === "string" ? parsed.regionLabel : undefined,
+  };
 }
 
 /**
@@ -39,25 +34,26 @@ function loadSavedConditions(): FieldConditions {
  * busca as condições reais do ponto em /api/crop e /api/location.
  */
 export function useFieldConditions() {
-  // Como no useCropGrid: o valor salvo só entra após a montagem para não
-  // divergir do HTML do servidor (hydration mismatch).
-  const [conditions, setConditions] =
-    useState<FieldConditions>(DEFAULT_CONDITIONS);
-  const [isLoaded, setIsLoaded] = useState(false);
+  // Persistência por usuário (servidor) ou localStorage (anônimo). O valor
+  // carregado só entra após a montagem — evita hydration mismatch.
+  const {
+    state: conditions,
+    setState: setConditions,
+    isLoaded,
+  } = usePersistedState<FieldConditions>({
+    namespace: "fieldConditions",
+    anonKey: "simFieldConditions",
+    defaultState: DEFAULT_CONDITIONS,
+    normalize: normalizeConditions,
+  });
   const [isFetchingMap, setIsFetchingMap] = useState(false);
 
+  // Só busca as condições do mapa APÓS a carga inicial, para que a navegação
+  // vinda do globo (?lat=&lng=) sobrescreva de forma determinística o valor
+  // carregado — e persista pelo save normal.
   useEffect(() => {
-    setConditions(loadSavedConditions());
-    setIsLoaded(true);
-  }, []);
+    if (!isLoaded) return;
 
-  useEffect(() => {
-    if (isLoaded) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(conditions));
-    }
-  }, [conditions, isLoaded]);
-
-  useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const lat = Number(params.get("lat"));
     const lng = Number(params.get("lng"));
@@ -102,7 +98,7 @@ export function useFieldConditions() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [isLoaded, setConditions]);
 
   /** Ajuste manual de um dos valores (marca a origem como manual). */
   const adjust = useCallback(
@@ -114,7 +110,7 @@ export function useFieldConditions() {
         regionLabel: undefined,
       }));
     },
-    [],
+    [setConditions],
   );
 
   return { conditions, adjust, isFetchingMap };
